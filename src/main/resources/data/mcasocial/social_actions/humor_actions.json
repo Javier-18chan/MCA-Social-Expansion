@@ -1,0 +1,9 @@
+{
+  "actions": [
+    {"id":"humor_fastidiar","label_key":"gui.mcasocial.humor.action.fastidiar","affinity_points":3,"reject_points":-2,"success_chance":0.62,"cooldown_seconds":180,"neutral_limit":3,"harto_limit":7},
+    {"id":"humor_entretener","label_key":"gui.mcasocial.humor.action.entretener","affinity_points":5,"reject_points":-1,"success_chance":0.78,"cooldown_seconds":240,"neutral_limit":4,"harto_limit":9},
+    {"id":"humor_ser_tonto","label_key":"gui.mcasocial.humor.action.ser_tonto","affinity_points":4,"reject_points":-1,"success_chance":0.72,"cooldown_seconds":210,"neutral_limit":4,"harto_limit":8},
+    {"id":"humor_contar_chiste","label_key":"gui.mcasocial.humor.action.contar_chiste","affinity_points":4,"reject_points":-1,"success_chance":0.70,"cooldown_seconds":180,"neutral_limit":3,"harto_limit":8},
+    {"id":"humor_imitar","label_key":"gui.mcasocial.humor.action.imitar","affinity_points":4,"reject_points":-2,"success_chance":0.66,"cooldown_seconds":240,"neutral_limit":3,"harto_limit":8}
+  ]
+}

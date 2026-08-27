@@ -36,4 +36,3 @@ _XavierCodes_
 ## Licencia
 
 GNU General Public License v3.0 only (`GPL-3.0-only`). Consulta el archivo `LICENSE` para leer los términos completos.
-
