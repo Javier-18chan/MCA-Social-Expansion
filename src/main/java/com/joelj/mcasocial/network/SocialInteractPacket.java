@@ -3,6 +3,9 @@ package com.joelj.mcasocial.network;
 import com.joelj.mcasocial.social.SocialActionService;
 import com.joelj.mcasocial.social.SocialCapability;
 import com.joelj.mcasocial.social.SocialContactHelper;
+import com.joelj.mcasocial.social.SocialContactsCapability;
+import com.joelj.mcasocial.social.SocialDiscoveryService;
+import com.joelj.mcasocial.social.SocialContact;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -46,9 +49,22 @@ public class SocialInteractPacket {
 
             entity.getCapability(SocialCapability.SOCIAL_CAPABILITY).ifPresent(data -> {
                 SocialActionService.RoleInfo role = SocialActionService.inspectRole(entity, player, this.isFamily);
-                SocialActionService.perform(player, entity, data, this.accion, role, SocialActionService.InteractionChannel.FACE_TO_FACE);
-                SocialContactHelper.remember(player, entity, data, role.isBaby(), role.isMinor(),
-                        role.ageStage(), role.isFamily(), role.isSpouse());
+                if (SocialDiscoveryService.isDiscoveryAction(this.accion)) {
+                    SocialContactHelper.remember(player, entity, data, role.isBaby(), role.isMinor(),
+                            role.ageStage(), role.isFamily(), role.isSpouse());
+                    player.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).ifPresent(contacts -> {
+                        SocialContact contact = contacts.getContact(entity.getUUID());
+                        if (contact == null) return;
+                        SocialDiscoveryService.perform(player, contact, role, SocialActionService.InteractionChannel.FACE_TO_FACE);
+                        data.setAffinity(contact.getAffinity());
+                        contact.updateSocialValues(data);
+                        contacts.addOrUpdate(contact);
+                    });
+                } else {
+                    SocialActionService.perform(player, entity, data, this.accion, role, SocialActionService.InteractionChannel.FACE_TO_FACE);
+                    SocialContactHelper.remember(player, entity, data, role.isBaby(), role.isMinor(),
+                            role.ageStage(), role.isFamily(), role.isSpouse());
+                }
             });
         });
         context.setPacketHandled(true);

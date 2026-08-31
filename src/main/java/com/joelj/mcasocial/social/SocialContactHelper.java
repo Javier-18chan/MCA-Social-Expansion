@@ -34,6 +34,7 @@ public class SocialContactHelper {
                     player.level().getGameTime()
             );
             contact.updateSocialValues(data);
+            GiftPreferenceProfile.ensure(contact);
             contacts.addOrUpdate(contact);
         });
     }

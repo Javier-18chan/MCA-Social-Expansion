@@ -12,8 +12,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import com.joelj.mcasocial.MCASocialExpansion;
 import com.joelj.mcasocial.network.ModMessages;
-import com.joelj.mcasocial.network.ContactInteractPacket;
-import com.joelj.mcasocial.network.SocialInteractPacket;
 import com.joelj.mcasocial.network.MorphInterfacePacket;
 import com.joelj.mcasocial.social.SocialInterfaceType;
 import com.joelj.mcasocial.social.SocialAgeStage;
@@ -101,13 +99,12 @@ public class CardSocialScreen extends Screen {
         int margenIzq = this.leftPos + 14;
         int margenDer = this.leftPos + 83;
         int centroX = this.leftPos + (this.imageWidth / 2);
-        int startY = this.topPos + 126;
+        int startY = this.topPos + 122;
         int separacionY = 29;
 
-        Component txtAmistad = Component.translatable("gui.mcasocial.friendship.title");
+        Component txtAmistad = Component.translatable("gui.mcasocial.conversation.title");
         Component txtHumor = Component.translatable("gui.mcasocial.humor.title");
-        Component txtElogiar = this.isBaby ? Component.literal("Mmmaa!") : Component.translatable("gui.mcasocial.btn_praise");
-        Component txtInsultar = this.isBaby ? Component.literal("Bwaaa!") : Component.translatable("gui.mcasocial.btn_insult");
+        Component txtConflict = Component.translatable("gui.mcasocial.conflict.title");
         boolean affection = this.isBaby || this.isMinor || this.isFamily;
         Component relationshipTitle = Component.translatable(affection
                 ? "gui.mcasocial.relationship.affection.title"
@@ -120,10 +117,11 @@ public class CardSocialScreen extends Screen {
         this.addRenderableWidget(new CardButton(margenDer, startY, relationshipTitle,
                 btn -> openRelationshipScreen(), EMOJI_ROMANCE));
         this.addRenderableWidget(new CardButton(margenIzq, startY + separacionY, txtHumor, btn -> openHumorScreen()));
-        this.addRenderableWidget(new CardButton(margenDer, startY + separacionY, txtElogiar, btn -> enviarAccion("elogiar")));
-        this.addRenderableWidget(new CardButton(margenIzq, startY + (separacionY * 2), txtInsultar, btn -> enviarAccion("insultar")));
-        this.addRenderableWidget(new CardButton(margenDer, startY + (separacionY * 2),
+        this.addRenderableWidget(new CardButton(margenDer, startY + separacionY, txtConflict, btn -> openConflictScreen()));
+        this.addRenderableWidget(new CardButton(margenIzq, startY + (separacionY * 2),
                 Component.translatable("gui.mcasocial.btn_gift"), btn -> abrirPantallaRegalos()));
+        this.addRenderableWidget(new CardButton(margenDer, startY + (separacionY * 2),
+                Component.translatable("gui.mcasocial.discovery.button"), btn -> openInsightScreen()));
     }
 
     public void morphToPhone() {
@@ -150,13 +148,14 @@ public class CardSocialScreen extends Screen {
                 SocialInterfaceType.LETTER, this.contactUuid));
     }
 
-    private void enviarAccion(String accion) {
-        if (this.contactUuid != null) {
-            ModMessages.sendToServer(new ContactInteractPacket(this.contactUuid, accion, 1));
-        } else {
-            ModMessages.sendToServer(new SocialInteractPacket(this.entityId, accion, this.isFamily));
-        }
-        this.onClose();
+    private void openConflictScreen() {
+        Minecraft.getInstance().setScreen(new ConflictScreen(
+                this, SocialInterfaceType.LETTER, this.entityId, this.contactUuid, this.isFamily, this.nombre));
+    }
+
+    private void openInsightScreen() {
+        Minecraft.getInstance().setScreen(new ContactInsightScreen(
+                this, SocialInterfaceType.LETTER, this.nombre, this.personalidad, this.ageStage));
     }
 
     private void abrirPantallaRegalos() {
@@ -167,12 +166,6 @@ public class CardSocialScreen extends Screen {
             return;
         }
         Minecraft.getInstance().setScreen(new GiftScreen(this.entityId, this.nombre, this.isFamily));
-    }
-
-    private String getTraitKey(String trait) {
-        if (trait == null) return "gui.mcasocial.trait.unknown";
-        String t = trait.toLowerCase().replace("í", "i").replace("á", "a").replace("ó", "o");
-        return "gui.mcasocial.trait." + t;
     }
 
     @Override
@@ -280,8 +273,11 @@ public class CardSocialScreen extends Screen {
             guiGraphics.pose().translate(centroX, this.topPos + 64, 0);
             guiGraphics.pose().scale(0.95f, 0.95f, 1.0f);
 
-            MutableComponent personalityComp = Component.translatable("gui.mcasocial.personality").append(Component.literal(": ")).append(Component.translatable(getTraitKey(this.personalidad)));
-            guiGraphics.drawCenteredString(this.font, personalityComp, 0, 0, CARD_TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font,
+                    Component.translatable("gui.mcasocial.personality").append(Component.literal(":")),
+                    0, 0, CARD_MUTED_COLOR);
+            guiGraphics.drawCenteredString(this.font, ClientSocialProfile.personalityDisplay(this.personalidad),
+                    0, 10, CARD_TEXT_COLOR);
 
             MutableComponent tagAmistad = Component.translatable("gui.mcasocial.tag.amistad.0");
             if (this.afinidad >= 100) tagAmistad = Component.translatable("gui.mcasocial.tag.amistad.3");
@@ -289,16 +285,16 @@ public class CardSocialScreen extends Screen {
             else if (this.afinidad >= 50) tagAmistad = Component.translatable("gui.mcasocial.tag.amistad.1");
             MutableComponent labelAmistad = Component.translatable("gui.mcasocial.label.amistad").append(Component.literal(": " + this.afinidad + " (")).append(tagAmistad).append(Component.literal(")"));
 
-            guiGraphics.drawCenteredString(this.font, labelAmistad, 0, 10, CARD_FRIENDSHIP_COLOR);
+            guiGraphics.drawCenteredString(this.font, labelAmistad, 0, 20, CARD_FRIENDSHIP_COLOR);
 
             if (this.isBaby || this.isMinor || this.isFamily) {
                 MutableComponent labelParentesco = Component.translatable("gui.mcasocial.label.parentesco").append(Component.literal(": "));
                 MutableComponent tagParentesco = this.isFamily ? Component.translatable("gui.mcasocial.tag.familiar") : Component.translatable("gui.mcasocial.tag.ninguno");
-                guiGraphics.drawCenteredString(this.font, labelParentesco.append(tagParentesco), 0, 20, CARD_TEXT_COLOR);
+                guiGraphics.drawCenteredString(this.font, labelParentesco.append(tagParentesco), 0, 30, CARD_TEXT_COLOR);
                 MutableComponent trustTag = Component.translatable(RelationshipActionCatalog.trustTagKey(this.trust));
                 MutableComponent trustLine = Component.translatable("gui.mcasocial.relationship.trust")
                         .append(Component.literal(": " + this.trust + " (")).append(trustTag).append(Component.literal(")"));
-                guiGraphics.drawCenteredString(this.font, trustLine, 0, 30, CARD_TRUST_COLOR);
+                guiGraphics.drawCenteredString(this.font, trustLine, 0, 40, CARD_TRUST_COLOR);
             } else {
                 MutableComponent tagRomance = Component.translatable("gui.mcasocial.tag.romance.0");
                 if (this.isSpouse) tagRomance = Component.translatable("gui.mcasocial.tag.romance.4");
@@ -306,7 +302,7 @@ public class CardSocialScreen extends Screen {
                 else if (this.romance >= 50) tagRomance = Component.translatable("gui.mcasocial.tag.romance.2");
                 else if (this.romance >= 25) tagRomance = Component.translatable("gui.mcasocial.tag.romance.1");
                 MutableComponent labelRomance = Component.translatable("gui.mcasocial.label.romance").append(Component.literal(": " + this.romance + " (")).append(tagRomance).append(Component.literal(")"));
-                guiGraphics.drawCenteredString(this.font, labelRomance, 0, 20, CARD_ROMANCE_COLOR);
+                guiGraphics.drawCenteredString(this.font, labelRomance, 0, 30, CARD_ROMANCE_COLOR);
             }
             guiGraphics.pose().popPose();
 

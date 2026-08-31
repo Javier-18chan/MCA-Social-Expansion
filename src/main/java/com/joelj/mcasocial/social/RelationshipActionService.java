@@ -150,6 +150,7 @@ public final class RelationshipActionService {
         }
         sendResult(player, role.name(), primaryKey, null, null, parentKey,
                 romancePoints, affinityPoints, trustPoints, definition.romanceAction(), channel);
+        SocialDiscoveryService.recordInteraction(player, entity, data, action, role);
         spawnFeedback(player, entity, channel, definition.romanceAction(), success);
     }
 
@@ -316,8 +317,7 @@ public final class RelationshipActionService {
 
         int combined = romancePoints + affinityPoints + trustPoints;
         float pitch = combined > 0 ? 1.45F : combined < 0 ? 0.55F : 0.9F;
-        player.level().playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP,
-                SoundSource.PLAYERS, 0.5F, pitch);
+        SocialInterfaceSounds.playResult(player, channel, pitch);
     }
 
     private static String pointText(int points, boolean hearts) {

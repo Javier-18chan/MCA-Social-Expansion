@@ -28,6 +28,10 @@ public class OpenSocialScreenPacket {
     public final int interfaceType;
     public final boolean remoteContact;
     public final UUID contactUuid;
+    public final int knowledgeLevel;
+    public final String favoriteGiftCategory;
+    public final String likedGiftCategory;
+    public final String dislikedGiftCategory;
 
     public OpenSocialScreenPacket(int entityId, String nombre, String personalidad, int afinidad, int romance, boolean isBaby, boolean isMinor, boolean isFamily, boolean isSpouse, int interfaceType) {
         this(entityId, nombre, personalidad, afinidad, romance, 8, isBaby, isMinor,
@@ -42,6 +46,15 @@ public class OpenSocialScreenPacket {
     public OpenSocialScreenPacket(int entityId, String nombre, String personalidad, int afinidad, int romance, int trust,
                                   boolean isBaby, boolean isMinor, boolean isFamily, boolean isSpouse,
                                   SocialAgeStage ageStage, int interfaceType, UUID contactUuid) {
+        this(entityId, nombre, personalidad, afinidad, romance, trust, isBaby, isMinor, isFamily, isSpouse,
+                ageStage, interfaceType, contactUuid, 0, "", "", "");
+    }
+
+    public OpenSocialScreenPacket(int entityId, String nombre, String personalidad, int afinidad, int romance, int trust,
+                                  boolean isBaby, boolean isMinor, boolean isFamily, boolean isSpouse,
+                                  SocialAgeStage ageStage, int interfaceType, UUID contactUuid,
+                                  int knowledgeLevel, String favoriteGiftCategory, String likedGiftCategory,
+                                  String dislikedGiftCategory) {
         this.entityId = entityId;
         this.nombre = nombre;
         this.personalidad = personalidad;
@@ -56,6 +69,10 @@ public class OpenSocialScreenPacket {
         this.interfaceType = SocialInterfaceType.normalize(interfaceType);
         this.remoteContact = contactUuid != null;
         this.contactUuid = contactUuid;
+        this.knowledgeLevel = Math.max(0, Math.min(4, knowledgeLevel));
+        this.favoriteGiftCategory = favoriteGiftCategory == null ? "" : favoriteGiftCategory;
+        this.likedGiftCategory = likedGiftCategory == null ? "" : likedGiftCategory;
+        this.dislikedGiftCategory = dislikedGiftCategory == null ? "" : dislikedGiftCategory;
     }
 
     public OpenSocialScreenPacket(FriendlyByteBuf buf) {
@@ -74,6 +91,10 @@ public class OpenSocialScreenPacket {
         this.interfaceType = SocialInterfaceType.normalize(interfaceId);
         this.remoteContact = buf.readBoolean();
         this.contactUuid = this.remoteContact ? buf.readUUID() : null;
+        this.knowledgeLevel = Math.max(0, Math.min(4, buf.readInt()));
+        this.favoriteGiftCategory = buf.readUtf(32);
+        this.likedGiftCategory = buf.readUtf(32);
+        this.dislikedGiftCategory = buf.readUtf(32);
     }
 
     public void toBytes(FriendlyByteBuf buf) {
@@ -93,6 +114,10 @@ public class OpenSocialScreenPacket {
         if (this.remoteContact) {
             buf.writeUUID(this.contactUuid);
         }
+        buf.writeInt(this.knowledgeLevel);
+        buf.writeUtf(this.favoriteGiftCategory);
+        buf.writeUtf(this.likedGiftCategory);
+        buf.writeUtf(this.dislikedGiftCategory);
     }
 
     public boolean handle(Supplier<NetworkEvent.Context> supplier) {

@@ -45,6 +45,8 @@ public class OpenContactsScreenPacket {
             boolean spouse = buf.readBoolean();
             contact.updateIdentity(name, personality, baby, minor, ageStage, family, spouse, buf.readLong());
             contact.setFavorite(buf.readBoolean());
+            contact.setKnowledgeLevel(buf.readInt());
+            contact.setGiftProfile(buf.readUtf(32), buf.readUtf(32), buf.readUtf(32));
             loadedContacts.add(contact);
         }
         this.contacts = loadedContacts;
@@ -69,6 +71,10 @@ public class OpenContactsScreenPacket {
             buf.writeBoolean(contact.isSpouse());
             buf.writeLong(contact.getLastSeenGameTime());
             buf.writeBoolean(contact.isFavorite());
+            buf.writeInt(contact.getKnowledgeLevel());
+            buf.writeUtf(contact.getFavoriteGiftCategory());
+            buf.writeUtf(contact.getLikedGiftCategory());
+            buf.writeUtf(contact.getDislikedGiftCategory());
         }
         buf.writeInt(this.interfaceType);
     }

@@ -4,12 +4,14 @@ import com.joelj.mcasocial.network.OpenContactsScreenPacket;
 import com.joelj.mcasocial.network.OpenSocialHomeScreenPacket;
 import com.joelj.mcasocial.network.OpenSocialScreenPacket;
 import com.joelj.mcasocial.network.SyncMorphPacket;
+import com.joelj.mcasocial.network.OpenInboxScreenPacket;
 import com.joelj.mcasocial.social.SocialInterfaceType;
 import net.minecraft.client.Minecraft;
 
 public class ClientScreenOpener {
 
     public static void open(OpenSocialScreenPacket data) {
+        ClientSocialProfile.update(data);
         if (data.interfaceType == SocialInterfaceType.LETTER) {
             Minecraft.getInstance().setScreen(new CardSocialScreen(
                     data.entityId, data.nombre, data.personalidad, data.afinidad,
@@ -36,7 +38,11 @@ public class ClientScreenOpener {
     }
 
     public static void openHome(OpenSocialHomeScreenPacket data) {
-        Minecraft.getInstance().setScreen(new SocialHomeScreen(data.interfaceType));
+        Minecraft.getInstance().setScreen(new SocialHomeScreen(data.interfaceType, data.delayMode, data.pendingCount));
+    }
+
+    public static void openInbox(OpenInboxScreenPacket data) {
+        Minecraft.getInstance().setScreen(new InboxScreen(data.entries, data.interfaceType, data.delayMode));
     }
 
     public static void syncMorph(SyncMorphPacket data) {

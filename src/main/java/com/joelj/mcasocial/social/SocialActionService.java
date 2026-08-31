@@ -18,13 +18,15 @@ public class SocialActionService {
     private static final Set<String> VALID_ACTIONS = Set.of(
             "saludar", "bromear", "elogiar", "insultar", "coquetear",
             "amistad_saludar", "preguntar_dia", "chismear", "contar_anecdota", "dar_apoyo",
-            "recordar_votos", "hablar_hogar", "planear_juntos"
+            "recordar_votos", "hablar_hogar", "planear_juntos",
+            "criticar", "confrontar", "provocar", "disculparse"
     );
 
     private SocialActionService() {}
 
     public static boolean isValidAction(String action) {
         return VALID_ACTIONS.contains(action)
+                || SocialDiscoveryService.isDiscoveryAction(action)
                 || RelationshipActionService.isRelationshipAction(action)
                 || HumorActionService.isHumorAction(action);
     }
@@ -234,7 +236,7 @@ public class SocialActionService {
                 puntosGanados = outcome.points();
                 llaveDialogo = outcome.dialogueKey();
 
-                if (!esAmistadExtra) {
+                if (!esAmistadExtra && !isConflictAction(action)) {
                     llaveDialogo = applyFamilyOverrides(action, palabraClave, role, esSpam, puntosGanados, llaveDialogo, player);
                 }
             }
@@ -251,6 +253,9 @@ public class SocialActionService {
         }
 
         applyPoints(player, entity, data, action, puntosGanados, esRomance, ejecutarAccionNormal);
+        if (ejecutarAccionNormal) {
+            SocialDiscoveryService.recordInteraction(player, entity, data, action, role);
+        }
         sendResult(player, nombre, llaveDialogo, puntosGanados, esRomance || action.equals("insultar"), channel);
     }
 
@@ -264,6 +269,8 @@ public class SocialActionService {
             case "bromear" -> jokeOutcome(p, dado, random);
             case "elogiar" -> praiseOutcome(p, dado, random);
             case "insultar" -> insultOutcome(p, dado, random);
+            case "criticar", "confrontar", "provocar", "disculparse" ->
+                    conflictOutcome(action, p, random, data, role);
             case "coquetear" -> flirtOutcome(p, dado, random, data);
             case "amistad_saludar" -> friendshipOutcome("saludo", p, random, data, role, channel, 2, player);
             case "preguntar_dia" -> friendshipOutcome("preguntar_dia", p, random, data, role, channel,
@@ -317,6 +324,32 @@ public class SocialActionService {
 
         if (dado < probInsulto) return new ActionOutcome(ptsBienInsulto, "chat.mcasocial.insulto." + p + ".bien." + random.nextInt(1, 4));
         return new ActionOutcome(ptsMalInsulto, "chat.mcasocial.insulto." + p + ".mal." + random.nextInt(1, 3));
+    }
+
+    private static ActionOutcome conflictOutcome(String action, String personality, ThreadLocalRandom random,
+                                                 ISocialData data, RoleInfo role) {
+        int variant = random.nextInt(1, 3);
+        int points = switch (action) {
+            case "criticar" -> personality.equals("orgulloso") ? -3 : -1;
+            case "confrontar" -> personality.equals("leal") ? 0 : -2;
+            case "provocar" -> personality.equals("sarcastico") ? -2 : -4;
+            case "disculparse" -> data.getAffinity() < 0 ? 4 : 2;
+            default -> 0;
+        };
+
+        if (action.equals("confrontar")) {
+            data.setTrust(data.getTrust() + (personality.equals("leal") ? 1 : -1));
+        } else if (action.equals("disculparse")) {
+            data.setTrust(data.getTrust() + 1);
+        }
+
+        String stage = switch (role.ageStage()) {
+            case BABY, CHILD -> "child";
+            case TEEN -> "teen";
+            default -> "adult";
+        };
+        String key = "chat.mcasocial.conflict." + action + "." + stage + "." + variant;
+        return new ActionOutcome(points, key);
     }
 
     private static ActionOutcome flirtOutcome(String p, double dado, ThreadLocalRandom random, ISocialData data) {
@@ -434,12 +467,16 @@ public class SocialActionService {
             colorSuma = points > 0 ? "\u00a7a(+" + points + ")" : (points == 0 ? "\u00a7e(+0)" : "\u00a7c(" + points + ")");
         }
 
+        Component dialogue = key.equals("chat.mcasocial.amistad.saludo.saliente.3")
+                || key.equals("chat.mcasocial.amistad.saludo.pareja")
+                ? Component.translatable(key, player.getDisplayName())
+                : Component.translatable(key);
         MutableComponent mensajeChat = Component.literal(prefix(nombre, channel))
-                .append(Component.translatable(key))
+                .append(dialogue)
                 .append(Component.literal(" " + colorSuma));
 
         player.sendSystemMessage(mensajeChat);
-        player.level().playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.5F, tono);
+        SocialInterfaceSounds.playResult(player, channel, tono);
     }
 
     private static String prefix(String name, InteractionChannel channel) {
@@ -464,6 +501,8 @@ public class SocialActionService {
             case "bromear" -> 2 * 60 * 1000L;
             case "elogiar" -> 5 * 60 * 1000L;
             case "insultar" -> 20 * 1000L;
+            case "criticar", "confrontar", "provocar" -> 45 * 1000L;
+            case "disculparse" -> 2 * 60 * 1000L;
             case "coquetear" -> 5 * 60 * 1000L;
             case "amistad_saludar" -> 5 * 60 * 1000L;
             case "preguntar_dia" -> 4 * 60 * 1000L;
@@ -553,6 +592,10 @@ public class SocialActionService {
             case "bromear" -> "broma";
             case "elogiar" -> "elogio";
             case "insultar" -> "insulto";
+            case "criticar" -> "conflict.criticar";
+            case "confrontar" -> "conflict.confrontar";
+            case "provocar" -> "conflict.provocar";
+            case "disculparse" -> "conflict.disculparse";
             case "amistad_saludar" -> "amistad.saludo";
             case "preguntar_dia" -> "amistad.preguntar_dia";
             case "chismear" -> "amistad.chismear";
@@ -575,6 +618,11 @@ public class SocialActionService {
         if (lower.contains("sarcastico") || lower.contains("sarc\u00e1stico")) return "sarcastico";
         if (lower.contains("romantico") || lower.contains("rom\u00e1ntico")) return "romantico";
         return "normal";
+    }
+
+    private static boolean isConflictAction(String action) {
+        return action.equals("criticar") || action.equals("confrontar")
+                || action.equals("provocar") || action.equals("disculparse");
     }
 
     private static String detectPlayerParentSuffix(ServerPlayer player) {

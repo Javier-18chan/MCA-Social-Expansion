@@ -3,7 +3,9 @@ package com.joelj.mcasocial.social;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class SocialContact implements ISocialData {
@@ -26,6 +28,12 @@ public class SocialContact implements ISocialData {
     private long lockoutTime;
     private long lastSeenGameTime;
     private boolean pendingSync;
+    private int knowledgeLevel;
+    private String favoriteGiftCategory = "";
+    private String likedGiftCategory = "";
+    private String dislikedGiftCategory = "";
+    private final Set<String> observedGiftCategories = new HashSet<>();
+    private final Set<String> discoveryActions = new HashSet<>();
 
     private final Map<String, Long> lastActionTimes = new HashMap<>();
     private final Map<String, Integer> actionUseCounts = new HashMap<>();
@@ -46,9 +54,33 @@ public class SocialContact implements ISocialData {
     public boolean isFavorite() { return favorite; }
     public long getLastSeenGameTime() { return lastSeenGameTime; }
     public boolean isPendingSync() { return pendingSync; }
+    public int getKnowledgeLevel() { return knowledgeLevel; }
+    public String getFavoriteGiftCategory() { return favoriteGiftCategory; }
+    public String getLikedGiftCategory() { return likedGiftCategory; }
+    public String getDislikedGiftCategory() { return dislikedGiftCategory; }
+    public Set<String> getObservedGiftCategories() { return Set.copyOf(observedGiftCategories); }
+    public Set<String> getDiscoveryActions() { return Set.copyOf(discoveryActions); }
+    public boolean hasGiftProfile() {
+        return !favoriteGiftCategory.isBlank() && !likedGiftCategory.isBlank() && !dislikedGiftCategory.isBlank();
+    }
 
     public void setFavorite(boolean favorite) { this.favorite = favorite; }
     public void setPendingSync(boolean pendingSync) { this.pendingSync = pendingSync; }
+    public void setKnowledgeLevel(int knowledgeLevel) { this.knowledgeLevel = Math.max(0, Math.min(4, knowledgeLevel)); }
+    public void setGiftProfile(String favorite, String liked, String disliked) {
+        this.favoriteGiftCategory = favorite == null ? "" : favorite;
+        this.likedGiftCategory = liked == null ? "" : liked;
+        this.dislikedGiftCategory = disliked == null ? "" : disliked;
+    }
+    public boolean observeGiftCategory(String category) {
+        return category != null && !category.isBlank() && observedGiftCategories.add(category);
+    }
+    public boolean recordDiscoveryAction(String action) {
+        return action != null && !action.isBlank() && discoveryActions.add(action);
+    }
+    public int getDiscoveryEvidenceCount() {
+        return observedGiftCategories.size() + discoveryActions.size();
+    }
 
     public void updateIdentity(String name, String personality, boolean baby, boolean minor, boolean family, boolean spouse, long lastSeenGameTime) {
         updateIdentity(name, personality, baby, minor, SocialAgeStage.fromFlags(baby, minor),
@@ -64,6 +96,7 @@ public class SocialContact implements ISocialData {
         this.ageStage = ageStage == null ? SocialAgeStage.fromFlags(baby, minor) : ageStage;
         this.family = family;
         this.spouse = spouse;
+        if (family || spouse) this.knowledgeLevel = 4;
         this.lastSeenGameTime = lastSeenGameTime;
     }
 
@@ -129,6 +162,16 @@ public class SocialContact implements ISocialData {
         tag.putLong("LockoutTime", lockoutTime);
         tag.putLong("LastSeenGameTime", lastSeenGameTime);
         tag.putBoolean("PendingSync", pendingSync);
+        tag.putInt("KnowledgeLevel", knowledgeLevel);
+        tag.putString("FavoriteGiftCategory", favoriteGiftCategory);
+        tag.putString("LikedGiftCategory", likedGiftCategory);
+        tag.putString("DislikedGiftCategory", dislikedGiftCategory);
+        CompoundTag observedCategories = new CompoundTag();
+        observedGiftCategories.forEach(category -> observedCategories.putBoolean(category, true));
+        tag.put("ObservedGiftCategories", observedCategories);
+        CompoundTag knownActions = new CompoundTag();
+        discoveryActions.forEach(action -> knownActions.putBoolean(action, true));
+        tag.put("DiscoveryActions", knownActions);
         tag.put("LastActionTimes", saveLongMap(lastActionTimes));
         tag.put("ActionUseCounts", saveIntMap(actionUseCounts));
         return tag;
@@ -158,6 +201,16 @@ public class SocialContact implements ISocialData {
         contact.lockoutTime = tag.getLong("LockoutTime");
         contact.lastSeenGameTime = tag.getLong("LastSeenGameTime");
         contact.pendingSync = tag.getBoolean("PendingSync");
+        contact.knowledgeLevel = Math.max(0, Math.min(4, tag.getInt("KnowledgeLevel")));
+        contact.favoriteGiftCategory = tag.getString("FavoriteGiftCategory");
+        contact.likedGiftCategory = tag.getString("LikedGiftCategory");
+        contact.dislikedGiftCategory = tag.getString("DislikedGiftCategory");
+        for (String key : tag.getCompound("ObservedGiftCategories").getAllKeys()) {
+            contact.observedGiftCategories.add(key);
+        }
+        for (String key : tag.getCompound("DiscoveryActions").getAllKeys()) {
+            contact.discoveryActions.add(key);
+        }
         loadLongMap(tag.getCompound("LastActionTimes"), contact.lastActionTimes);
         loadIntMap(tag.getCompound("ActionUseCounts"), contact.actionUseCounts);
         return contact;
@@ -181,6 +234,12 @@ public class SocialContact implements ISocialData {
         copy.lockoutTime = lockoutTime;
         copy.lastSeenGameTime = lastSeenGameTime;
         copy.pendingSync = pendingSync;
+        copy.knowledgeLevel = knowledgeLevel;
+        copy.favoriteGiftCategory = favoriteGiftCategory;
+        copy.likedGiftCategory = likedGiftCategory;
+        copy.dislikedGiftCategory = dislikedGiftCategory;
+        copy.observedGiftCategories.addAll(observedGiftCategories);
+        copy.discoveryActions.addAll(discoveryActions);
         copy.lastActionTimes.putAll(lastActionTimes);
         copy.actionUseCounts.putAll(actionUseCounts);
         return copy;

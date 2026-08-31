@@ -4,6 +4,7 @@ import com.joelj.mcasocial.network.ModMessages;
 import com.joelj.mcasocial.network.MorphInterfacePacket;
 import com.joelj.mcasocial.item.ModItems;
 import com.joelj.mcasocial.social.SocialInterfaceType;
+import com.joelj.mcasocial.social.DeliveryDelayMode;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -17,13 +18,21 @@ public class InterfaceSettingsScreen extends Screen {
 
     private final SocialInterfaceTheme theme;
     private final int interfaceType;
+    private final DeliveryDelayMode delayMode;
+    private final int pendingCount;
     private int leftPos;
     private int topPos;
 
     public InterfaceSettingsScreen(int interfaceType) {
+        this(interfaceType, DeliveryDelayMode.SHORT, 0);
+    }
+
+    public InterfaceSettingsScreen(int interfaceType, DeliveryDelayMode delayMode, int pendingCount) {
         super(Component.translatable("gui.mcasocial.menu.title"));
         this.theme = SocialInterfaceTheme.fromId(interfaceType);
         this.interfaceType = this.theme.id();
+        this.delayMode = delayMode == null ? DeliveryDelayMode.SHORT : delayMode;
+        this.pendingCount = Math.max(0, pendingCount);
     }
 
     @Override
@@ -31,6 +40,15 @@ public class InterfaceSettingsScreen extends Screen {
         super.init();
         this.leftPos = (this.width - this.theme.imageWidth()) / 2;
         this.topPos = (this.height - this.theme.imageHeight()) / 2;
+        int buttonWidth = 117;
+        int startX = this.leftPos + (this.theme.imageWidth() - buttonWidth) / 2;
+        this.addRenderableWidget(new SocialMenuButton(
+                startX, this.topPos + this.theme.imageHeight() - 65,
+                buttonWidth, 30, this.theme.menuButtons(),
+                Component.translatable("gui.mcasocial.back"),
+                button -> Minecraft.getInstance().setScreen(new SocialHomeScreen(
+                        this.interfaceType, this.delayMode, this.pendingCount))
+        ));
     }
 
     @Override
@@ -141,7 +159,7 @@ public class InterfaceSettingsScreen extends Screen {
     }
 
     public void openAfterMorph(int targetInterface) {
-        Minecraft.getInstance().setScreen(new SocialHomeScreen(targetInterface));
+        Minecraft.getInstance().setScreen(new SocialHomeScreen(targetInterface, delayMode, pendingCount));
     }
 
     @Override

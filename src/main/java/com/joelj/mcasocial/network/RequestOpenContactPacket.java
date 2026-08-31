@@ -6,6 +6,7 @@ import com.joelj.mcasocial.social.SocialInterfaceType;
 import com.joelj.mcasocial.social.SocialActionService;
 import com.joelj.mcasocial.social.SocialCapability;
 import com.joelj.mcasocial.social.McaRomanceSync;
+import com.joelj.mcasocial.social.GiftPreferenceProfile;
 import forge.net.conczin.mca.entity.VillagerEntityMCA;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -66,6 +67,8 @@ public class RequestOpenContactPacket {
                     });
                 }
 
+                GiftPreferenceProfile.ensure(contact);
+
                 ModMessages.sendToPlayer(new OpenSocialScreenPacket(
                         -1,
                         contact.getName(),
@@ -79,7 +82,11 @@ public class RequestOpenContactPacket {
                         contact.isSpouse(),
                         contact.getAgeStage(),
                         this.interfaceType,
-                        contact.getUuid()
+                        contact.getUuid(),
+                        contact.getKnowledgeLevel(),
+                        contact.getFavoriteGiftCategory(),
+                        contact.getLikedGiftCategory(),
+                        contact.getDislikedGiftCategory()
                 ), player);
             });
         });

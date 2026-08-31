@@ -44,7 +44,7 @@ public class FriendshipScreen extends Screen {
     public FriendshipScreen(int entityId, String nombre, String personalidad, int afinidad, int romance, int trust,
                             boolean isBaby, boolean isMinor, boolean isFamily, boolean isSpouse,
                             SocialAgeStage ageStage, int interfaceType, UUID contactUuid) {
-        super(Component.translatable("gui.mcasocial.friendship.title"));
+        super(Component.translatable("gui.mcasocial.conversation.title"));
         this.entityId = entityId;
         this.nombre = nombre;
         this.personalidad = personalidad;
@@ -106,6 +106,8 @@ public class FriendshipScreen extends Screen {
         List<MenuEntry> entries = new ArrayList<>(List.of(
                 new MenuEntry("gui.mcasocial.friendship.greet", "amistad_saludar"),
                 new MenuEntry("gui.mcasocial.friendship.ask_day", "preguntar_dia"),
+                new MenuEntry("gui.mcasocial.btn_praise", "elogiar"),
+                new MenuEntry("gui.mcasocial.discovery.ask_interests", "preguntar_intereses"),
                 new MenuEntry("gui.mcasocial.friendship.gossip", "chismear"),
                 new MenuEntry("gui.mcasocial.friendship.story", "contar_anecdota"),
                 new MenuEntry("gui.mcasocial.friendship.support", "dar_apoyo")
@@ -161,7 +163,7 @@ public class FriendshipScreen extends Screen {
         guiGraphics.drawCenteredString(this.font, Component.translatable(this.theme.homeTitleKey())
                         .append(" ").append(Component.translatable("gui.mcasocial.version")),
                 centerX, titleY, this.theme.titleColor());
-        guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.friendship.title"),
+        guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.conversation.title"),
                 centerX, this.topPos + 32, this.theme.textColor());
         guiGraphics.drawCenteredString(this.font, this.nombre, centerX, this.topPos + 44, this.theme.accentColor());
         super.render(guiGraphics, mouseX, mouseY, partialTicks);

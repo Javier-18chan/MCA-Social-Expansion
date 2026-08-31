@@ -15,6 +15,7 @@ import com.joelj.mcasocial.social.SocialContactsCapability;
 import com.joelj.mcasocial.social.SocialContactsProvider;
 import com.joelj.mcasocial.social.SocialInterfaceType;
 import com.joelj.mcasocial.social.SocialProvider;
+import com.joelj.mcasocial.social.DelayedSocialActionService;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -26,6 +27,7 @@ import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -171,10 +173,19 @@ public class SocialEvents {
                 SocialContactHelper.remember(serverPlayer, entity, data, isBabyFlag, isMinorFlag,
                         detectedRole.ageStage(), isFamilyFlag, isSpouseFlag);
 
+                ISocialContacts playerContacts = serverPlayer
+                        .getCapability(SocialContactsCapability.SOCIAL_CONTACTS)
+                        .orElse(null);
+                SocialContact profile = playerContacts == null ? null : playerContacts.getContact(entity.getUUID());
+
                 ModMessages.sendToPlayer(
                         new OpenSocialScreenPacket(idAldeano, nombreAldeano, personalidad, afinidad, romance,
                                 data.getTrust(), isBabyFlag, isMinorFlag, isFamilyFlag, isSpouseFlag,
-                                detectedRole.ageStage(), interfaceType, null),
+                                detectedRole.ageStage(), interfaceType, null,
+                                profile == null ? 0 : profile.getKnowledgeLevel(),
+                                profile == null ? "" : profile.getFavoriteGiftCategory(),
+                                profile == null ? "" : profile.getLikedGiftCategory(),
+                                profile == null ? "" : profile.getDislikedGiftCategory()),
                         serverPlayer
                 );
             });
@@ -196,7 +207,12 @@ public class SocialEvents {
                 : item == ModItems.CRYSTAL.get() ? SocialInterfaceType.CRYSTAL : SocialInterfaceType.PHONE;
         Player player = event.getEntity();
         if (!player.level().isClientSide() && player instanceof ServerPlayer serverPlayer) {
-            ModMessages.sendToPlayer(new OpenSocialHomeScreenPacket(interfaceType), serverPlayer);
+            ISocialContacts contacts = serverPlayer.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).orElse(null);
+            OpenSocialHomeScreenPacket packet = contacts == null
+                    ? new OpenSocialHomeScreenPacket(interfaceType)
+                    : new OpenSocialHomeScreenPacket(
+                            interfaceType, contacts.getDeliveryDelayMode(), contacts.getPendingActions().size());
+            ModMessages.sendToPlayer(packet, serverPlayer);
         }
 
         event.setCanceled(true);
@@ -212,6 +228,14 @@ public class SocialEvents {
                 )
         );
         event.getOriginal().invalidateCaps();
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide()) return;
+        if (!(event.player instanceof ServerPlayer serverPlayer)) return;
+        if (serverPlayer.level().getGameTime() % 5L != 0L) return;
+        DelayedSocialActionService.tick(serverPlayer);
     }
 
     @Mod.EventBusSubscriber(modid = "mcasocial", bus = Mod.EventBusSubscriber.Bus.MOD)

@@ -74,6 +74,20 @@ public enum SocialInterfaceTheme {
             case LETTER -> texture("textures/gui/boton_filtro.png");
         };
     }
+    public ResourceLocation settingsTexture() {
+        return switch (this) {
+            case PHONE -> texture("textures/gui/tuerca_celular.png");
+            case LETTER -> texture("textures/gui/tuerca_carta.png");
+            case CRYSTAL -> texture("textures/gui/tuerca_crystal.png");
+        };
+    }
+    public ResourceLocation settingsHoverTexture() {
+        return switch (this) {
+            case PHONE -> texture("textures/gui/tuerca_celular_hover.png");
+            case LETTER -> texture("textures/gui/tuerca_carta_hover.png");
+            case CRYSTAL -> texture("textures/gui/tuerca_crystal_hover.png");
+        };
+    }
     public String homeTitleKey() { return homeTitleKey; }
     public int contactRows() { return contactRows; }
     public int contactStep() { return contactStep; }

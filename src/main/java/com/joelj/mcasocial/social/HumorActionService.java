@@ -102,6 +102,7 @@ public final class HumorActionService {
                 : (variant == 1 ? baseKey + "." + audienceKey + ".fail"
                 : baseKey + "." + audienceKey + ".fail." + variant);
         sendResult(player, role.name(), key, points, channel);
+        SocialDiscoveryService.recordInteraction(player, entity, data, action, role);
     }
 
     private static String baseKey(HumorActionCatalog.Definition definition) {
@@ -214,8 +215,7 @@ public final class HumorActionService {
         player.sendSystemMessage(message);
 
         float pitch = points > 0 ? 1.45F : points < 0 ? 0.55F : 0.9F;
-        player.level().playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP,
-                SoundSource.PLAYERS, 0.5F, pitch);
+        SocialInterfaceSounds.playResult(player, channel, pitch);
     }
 
     private static String pointText(int points) {

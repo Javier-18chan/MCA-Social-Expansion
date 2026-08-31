@@ -6,6 +6,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.Util;
+import com.joelj.mcasocial.network.RequestInboxPacket;
+import com.joelj.mcasocial.social.DeliveryDelayMode;
 
 public class SocialHomeScreen extends Screen {
     private final SocialInterfaceTheme theme;
@@ -13,15 +15,28 @@ public class SocialHomeScreen extends Screen {
     private int leftPos;
     private int topPos;
     private long timeOpened;
+    private final DeliveryDelayMode delayMode;
+    private final int pendingCount;
+    private SocialIconButton settingsButton;
 
     public SocialHomeScreen(int interfaceType) {
-        this(SocialInterfaceTheme.fromId(interfaceType));
+        this(interfaceType, DeliveryDelayMode.SHORT, 0);
     }
 
-    private SocialHomeScreen(SocialInterfaceTheme theme) {
+    public SocialHomeScreen(int interfaceType, DeliveryDelayMode delayMode) {
+        this(interfaceType, delayMode, 0);
+    }
+
+    public SocialHomeScreen(int interfaceType, DeliveryDelayMode delayMode, int pendingCount) {
+        this(SocialInterfaceTheme.fromId(interfaceType), delayMode, pendingCount);
+    }
+
+    private SocialHomeScreen(SocialInterfaceTheme theme, DeliveryDelayMode delayMode, int pendingCount) {
         super(Component.translatable(theme.homeTitleKey()));
         this.theme = theme;
         this.interfaceType = theme.id();
+        this.delayMode = delayMode == null ? DeliveryDelayMode.SHORT : delayMode;
+        this.pendingCount = Math.max(0, pendingCount);
     }
 
     @Override
@@ -30,16 +45,37 @@ public class SocialHomeScreen extends Screen {
         this.leftPos = (this.width - this.theme.imageWidth()) / 2;
         this.topPos = (this.height - this.theme.imageHeight()) / 2;
         this.timeOpened = Util.getMillis();
+        SocialUiSounds.playOpen(this.theme);
 
         int buttonWidth = 117;
         int buttonHeight = 30;
         int startX = this.leftPos + ((this.theme.imageWidth() - buttonWidth) / 2);
-        int startY = this.topPos + 92;
+        int startY = this.topPos + 84;
 
         this.addRenderableWidget(new SocialMenuButton(startX, startY, buttonWidth, buttonHeight, this.theme.menuButtons(),
-                Component.translatable("gui.mcasocial.home.interface"), btn -> this.minecraft.setScreen(new InterfaceSettingsScreen(this.interfaceType))));
-        this.addRenderableWidget(new SocialMenuButton(startX, startY + 40, buttonWidth, buttonHeight, this.theme.menuButtons(),
                 Component.translatable("gui.mcasocial.home.contacts"), btn -> ModMessages.sendToServer(new RequestContactsPacket(this.interfaceType))));
+        Component inboxSubtitle = this.pendingCount == 0
+                ? Component.translatable("gui.mcasocial.home.inbox.empty")
+                : Component.translatable("gui.mcasocial.home.inbox.pending", this.pendingCount);
+        this.addRenderableWidget(new SocialMenuButton(startX, startY + 38, buttonWidth, buttonHeight, this.theme.menuButtons(),
+                Component.translatable("gui.mcasocial.home.inbox"), inboxSubtitle, this.theme.mutedColor(),
+                btn -> ModMessages.sendToServer(new RequestInboxPacket(this.interfaceType))));
+        this.addRenderableWidget(new SocialMenuButton(startX, startY + 76, buttonWidth, buttonHeight, this.theme.menuButtons(),
+                Component.translatable("gui.mcasocial.home.interface_style"),
+                btn -> this.minecraft.setScreen(new InterfaceSettingsScreen(
+                        this.interfaceType, this.delayMode, this.pendingCount))));
+
+        int gearSize = 16;
+        this.settingsButton = this.addRenderableWidget(new SocialIconButton(
+                this.leftPos + this.theme.imageWidth() - 28,
+                this.topPos + 18,
+                gearSize,
+                this.theme.settingsTexture(),
+                this.theme.settingsHoverTexture(),
+                Component.translatable("gui.mcasocial.settings.title"),
+                btn -> this.minecraft.setScreen(new SocialSettingsScreen(
+                        this.interfaceType, this.delayMode, this.pendingCount))
+        ));
     }
 
     @Override
@@ -67,6 +103,9 @@ public class SocialHomeScreen extends Screen {
                 centerX, this.topPos + 55, this.theme.mutedColor());
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         guiGraphics.pose().popPose();
+        if (this.settingsButton != null && this.settingsButton.isHoveredOrFocused()) {
+            guiGraphics.renderTooltip(this.font, Component.translatable("gui.mcasocial.settings.tooltip"), mouseX, mouseY);
+        }
     }
 
     private HomeMotion homeMotion() {

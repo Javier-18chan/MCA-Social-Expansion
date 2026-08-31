@@ -1,0 +1,42 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:barrier",
+    "minecraft:bedrock",
+    "minecraft:chain_command_block",
+    "minecraft:command_block",
+    "minecraft:command_block_minecart",
+    "minecraft:debug_stick",
+    "minecraft:end_portal_frame",
+    "minecraft:jigsaw",
+    "minecraft:knowledge_book",
+    "minecraft:light",
+    "minecraft:repeating_command_block",
+    "minecraft:spawner",
+    "minecraft:structure_block",
+    "minecraft:structure_void",
+    "mcasocial:carta",
+    "mcasocial:crystal",
+    "mcasocial:smartphone",
+    {
+      "id": "mca:baby_boy",
+      "required": false
+    },
+    {
+      "id": "mca:baby_girl",
+      "required": false
+    },
+    {
+      "id": "mca:sirben_baby_boy",
+      "required": false
+    },
+    {
+      "id": "mca:sirben_baby_girl",
+      "required": false
+    },
+    {
+      "id": "mca:villager_editor",
+      "required": false
+    }
+  ]
+}

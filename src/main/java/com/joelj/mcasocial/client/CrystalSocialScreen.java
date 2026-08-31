@@ -1,10 +1,8 @@
 package com.joelj.mcasocial.client;
 
 import com.joelj.mcasocial.MCASocialExpansion;
-import com.joelj.mcasocial.network.ContactInteractPacket;
 import com.joelj.mcasocial.network.ModMessages;
 import com.joelj.mcasocial.network.MorphInterfacePacket;
-import com.joelj.mcasocial.network.SocialInteractPacket;
 import com.joelj.mcasocial.social.SocialInterfaceType;
 import com.joelj.mcasocial.social.SocialAgeStage;
 import com.joelj.mcasocial.social.RelationshipActionCatalog;
@@ -96,13 +94,12 @@ public class CrystalSocialScreen extends Screen {
         int leftX = this.leftPos + 12;
         int rightX = this.leftPos + 83;
         int centerX = this.leftPos + IMAGE_WIDTH / 2;
-        int startY = this.topPos + 112;
+        int startY = this.topPos + 108;
         int stepY = 28;
 
-        Component friendship = Component.translatable("gui.mcasocial.friendship.title");
+        Component friendship = Component.translatable("gui.mcasocial.conversation.title");
         Component humor = Component.translatable("gui.mcasocial.humor.title");
-        Component praise = this.isBaby ? Component.literal("Mmmaa!") : Component.translatable("gui.mcasocial.btn_praise");
-        Component insult = this.isBaby ? Component.literal("Bwaaa!") : Component.translatable("gui.mcasocial.btn_insult");
+        Component conflict = Component.translatable("gui.mcasocial.conflict.title");
         boolean affection = this.isBaby || this.isMinor || this.isFamily;
         Component relationshipTitle = Component.translatable(affection
                 ? "gui.mcasocial.relationship.affection.title"
@@ -116,10 +113,11 @@ public class CrystalSocialScreen extends Screen {
         this.addRenderableWidget(new CrystalButton(rightX, startY, relationshipTitle,
                 btn -> openRelationshipScreen(), EMOJI_ROMANCE));
         this.addRenderableWidget(new CrystalButton(leftX, startY + stepY, humor, btn -> openHumorScreen()));
-        this.addRenderableWidget(new CrystalButton(rightX, startY + stepY, praise, btn -> sendAction("elogiar")));
-        this.addRenderableWidget(new CrystalButton(leftX, startY + stepY * 2, insult, btn -> sendAction("insultar")));
-        this.addRenderableWidget(new CrystalButton(rightX, startY + stepY * 2,
+        this.addRenderableWidget(new CrystalButton(rightX, startY + stepY, conflict, btn -> openConflictScreen()));
+        this.addRenderableWidget(new CrystalButton(leftX, startY + stepY * 2,
                 Component.translatable("gui.mcasocial.btn_gift"), btn -> openGifts()));
+        this.addRenderableWidget(new CrystalButton(rightX, startY + stepY * 2,
+                Component.translatable("gui.mcasocial.discovery.button"), btn -> openInsightScreen()));
     }
 
     public void morphToPhone() {
@@ -148,13 +146,14 @@ public class CrystalSocialScreen extends Screen {
                 SocialInterfaceType.CRYSTAL, this.contactUuid));
     }
 
-    private void sendAction(String action) {
-        if (this.contactUuid != null) {
-            ModMessages.sendToServer(new ContactInteractPacket(this.contactUuid, action, SocialInterfaceType.CRYSTAL));
-        } else {
-            ModMessages.sendToServer(new SocialInteractPacket(this.entityId, action, this.isFamily));
-        }
-        this.onClose();
+    private void openConflictScreen() {
+        Minecraft.getInstance().setScreen(new ConflictScreen(
+                this, SocialInterfaceType.CRYSTAL, this.entityId, this.contactUuid, this.isFamily, this.nombre));
+    }
+
+    private void openInsightScreen() {
+        Minecraft.getInstance().setScreen(new ContactInsightScreen(
+                this, SocialInterfaceType.CRYSTAL, this.nombre, this.personalidad, this.ageStage));
     }
 
     private void openGifts() {
@@ -166,13 +165,6 @@ public class CrystalSocialScreen extends Screen {
             return;
         }
         Minecraft.getInstance().setScreen(new GiftScreen(this.entityId, this.nombre, this.isFamily));
-    }
-
-    private String traitKey() {
-        if (this.personalidad == null) return "gui.mcasocial.trait.unknown";
-        String trait = this.personalidad.toLowerCase()
-                .replace("í", "i").replace("á", "a").replace("ó", "o");
-        return "gui.mcasocial.trait." + trait;
     }
 
     @Override
@@ -223,10 +215,11 @@ public class CrystalSocialScreen extends Screen {
         guiGraphics.pose().translate(centerX, this.topPos + 55, 0);
         guiGraphics.pose().scale(0.95F, 0.95F, 1.0F);
 
-        MutableComponent personality = Component.translatable("gui.mcasocial.personality")
-                .append(Component.literal(": "))
-                .append(Component.translatable(traitKey()));
-        guiGraphics.drawCenteredString(this.font, personality, 0, 0, 0x91A7FF);
+        guiGraphics.drawCenteredString(this.font,
+                Component.translatable("gui.mcasocial.personality").append(Component.literal(":")),
+                0, 0, 0x8290B8);
+        guiGraphics.drawCenteredString(this.font, ClientSocialProfile.personalityDisplay(this.personalidad),
+                0, 10, 0x91A7FF);
 
         MutableComponent friendshipTag = Component.translatable("gui.mcasocial.tag.amistad.0");
         if (this.afinidad >= 100) friendshipTag = Component.translatable("gui.mcasocial.tag.amistad.3");
@@ -236,7 +229,7 @@ public class CrystalSocialScreen extends Screen {
                 .append(Component.literal(": " + this.afinidad + " ("))
                 .append(friendshipTag)
                 .append(Component.literal(")"));
-        guiGraphics.drawCenteredString(this.font, friendship, 0, 10, this.afinidad < 0 ? 0xFF5555 : 0x55FFAA);
+        guiGraphics.drawCenteredString(this.font, friendship, 0, 20, this.afinidad < 0 ? 0xFF5555 : 0x55FFAA);
 
         if (this.isBaby || this.isMinor || this.isFamily) {
             MutableComponent kinship = Component.translatable("gui.mcasocial.label.parentesco")
@@ -244,11 +237,11 @@ public class CrystalSocialScreen extends Screen {
                     .append(Component.translatable(this.isFamily
                             ? "gui.mcasocial.tag.familiar"
                             : "gui.mcasocial.tag.ninguno"));
-            guiGraphics.drawCenteredString(this.font, kinship, 0, 20, 0xB7C9FF);
+            guiGraphics.drawCenteredString(this.font, kinship, 0, 30, 0xB7C9FF);
             MutableComponent trustTag = Component.translatable(RelationshipActionCatalog.trustTagKey(this.trust));
             MutableComponent trustLine = Component.translatable("gui.mcasocial.relationship.trust")
                     .append(Component.literal(": " + this.trust + " (")).append(trustTag).append(Component.literal(")"));
-            guiGraphics.drawCenteredString(this.font, trustLine, 0, 30, 0x55CCFF);
+            guiGraphics.drawCenteredString(this.font, trustLine, 0, 40, 0x55CCFF);
         } else {
             MutableComponent romanceTag = Component.translatable("gui.mcasocial.tag.romance.0");
             if (this.isSpouse) romanceTag = Component.translatable("gui.mcasocial.tag.romance.4");
@@ -259,7 +252,7 @@ public class CrystalSocialScreen extends Screen {
                     .append(Component.literal(": " + this.romance + " ("))
                     .append(romanceTag)
                     .append(Component.literal(")"));
-            guiGraphics.drawCenteredString(this.font, romanceLine, 0, 20,
+            guiGraphics.drawCenteredString(this.font, romanceLine, 0, 30,
                     this.romance < 0 ? 0xFF5555 : this.romance == 0 ? 0x8290B8 : 0xFF77C8);
         }
         guiGraphics.pose().popPose();
