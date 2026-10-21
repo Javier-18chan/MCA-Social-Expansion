@@ -3,6 +3,7 @@ package com.joelj.mcasocial.network;
 import com.joelj.mcasocial.item.ModItems;
 import com.joelj.mcasocial.social.SocialContactsCapability;
 import com.joelj.mcasocial.social.SocialInterfaceType;
+import com.joelj.mcasocial.social.ContactRosterService;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -31,9 +32,10 @@ public class RequestContactsPacket {
             ServerPlayer player = context.getSender();
             if (player == null || !hasSocialDevice(player)) return;
 
-            player.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).ifPresent(contacts ->
-                    ModMessages.sendToPlayer(new OpenContactsScreenPacket(contacts.getContacts(), this.interfaceType), player)
-            );
+            player.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).ifPresent(contacts -> {
+                ContactRosterService.refresh(player, contacts);
+                ModMessages.sendToPlayer(new OpenContactsScreenPacket(contacts.getContacts(), this.interfaceType), player);
+            });
         });
         context.setPacketHandled(true);
         return true;
@@ -45,6 +47,6 @@ public class RequestContactsPacket {
 
     private static boolean isSocialDevice(ItemStack stack) {
         return stack.is(ModItems.SMARTPHONE.get()) || stack.is(ModItems.CARTA.get())
-                || stack.is(ModItems.CRYSTAL.get());
+                || stack.is(ModItems.CRYSTAL.get()) || stack.is(ModItems.MAGIC_MIRROR.get());
     }
 }

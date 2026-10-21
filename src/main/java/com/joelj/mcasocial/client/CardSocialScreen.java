@@ -99,7 +99,7 @@ public class CardSocialScreen extends Screen {
         int margenIzq = this.leftPos + 14;
         int margenDer = this.leftPos + 83;
         int centroX = this.leftPos + (this.imageWidth / 2);
-        int startY = this.topPos + 122;
+        int startY = this.topPos + 134;
         int separacionY = 29;
 
         Component txtAmistad = Component.translatable("gui.mcasocial.conversation.title");
@@ -267,17 +267,14 @@ public class CardSocialScreen extends Screen {
             guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.home.card_title")
                     .append(" ").append(Component.translatable("gui.mcasocial.version")),
                     centroX, this.topPos + 27, CARD_TITLE_COLOR);
-            guiGraphics.drawCenteredString(this.font, this.nombre, centroX, this.topPos + 42, CARD_TEXT_COLOR);
-
+            ContactPortrait.renderProfileHeader(guiGraphics, this.font, this.contactUuid, this.entityId,
+                    this.nombre, ClientSocialProfile.personalityDisplay(this.personalidad),
+                    this.leftPos, this.topPos, 42, 64, yOffset, SocialInterfaceTheme.LETTER,
+                    CARD_TEXT_COLOR, CARD_MUTED_COLOR, CARD_TEXT_COLOR);
             guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(centroX, this.topPos + 64, 0);
+            guiGraphics.pose().translate(centroX,
+                    this.topPos + (this.isBaby || this.isMinor || this.isFamily ? 74 : 76), 0);
             guiGraphics.pose().scale(0.95f, 0.95f, 1.0f);
-
-            guiGraphics.drawCenteredString(this.font,
-                    Component.translatable("gui.mcasocial.personality").append(Component.literal(":")),
-                    0, 0, CARD_MUTED_COLOR);
-            guiGraphics.drawCenteredString(this.font, ClientSocialProfile.personalityDisplay(this.personalidad),
-                    0, 10, CARD_TEXT_COLOR);
 
             MutableComponent tagAmistad = Component.translatable("gui.mcasocial.tag.amistad.0");
             if (this.afinidad >= 100) tagAmistad = Component.translatable("gui.mcasocial.tag.amistad.3");
@@ -326,10 +323,24 @@ public class CardSocialScreen extends Screen {
         }
 
         guiGraphics.pose().popPose();
+        if (!this.mostrarMenuTuerca) {
+            ContactPortrait.renderRefreshTooltip(guiGraphics, this.font, this.contactUuid,
+                    this.leftPos, this.topPos, 42, yOffset, SocialInterfaceTheme.LETTER, mouseX, mouseY);
+        }
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if ((button == 0 || button == 1) && !this.mostrarMenuTuerca) {
+            long elapsed = Util.getMillis() - this.timeOpened;
+            float progress = Math.min(1.0F, elapsed / 350.0F);
+            progress = 1.0F - (float) Math.pow(1.0F - progress, 3);
+            float yOffset = this.height * (1.0F - progress);
+            if (ContactPortrait.refreshAt(this.contactUuid, this.entityId, this.leftPos,
+                    this.topPos, 42, yOffset, SocialInterfaceTheme.LETTER, mouseX, mouseY, button)) {
+                return true;
+            }
+        }
         if (button == 0) {
             long elapsed = Util.getMillis() - this.timeOpened;
             float progress = Math.min(1.0f, elapsed / 350.0f);

@@ -8,10 +8,14 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.List;
+import net.minecraft.util.FormattedCharSequence;
+
 public class SocialSettingsScreen extends Screen {
     private final SocialInterfaceTheme theme;
     private final int interfaceType;
     private DeliveryDelayMode delayMode;
+    private boolean spontaneousEnabled;
     private final int pendingCount;
     private int leftPos;
     private int topPos;
@@ -25,6 +29,7 @@ public class SocialSettingsScreen extends Screen {
         this.theme = SocialInterfaceTheme.fromId(interfaceType);
         this.interfaceType = this.theme.id();
         this.delayMode = delayMode == null ? DeliveryDelayMode.SHORT : delayMode;
+        this.spontaneousEnabled = ClientSocialSettings.isSpontaneousEnabled();
         this.pendingCount = Math.max(0, pendingCount);
     }
 
@@ -38,9 +43,9 @@ public class SocialSettingsScreen extends Screen {
 
     private void rebuildButtons() {
         clearWidgets();
-        int buttonWidth = 117;
+        int buttonWidth = theme.menuButtonWidth();
         int startX = leftPos + (theme.imageWidth() - buttonWidth) / 2;
-        int startY = topPos + 106;
+        int startY = topPos + 106 + (theme == SocialInterfaceTheme.MAGIC_MIRROR ? 36 : 0);
 
         addRenderableWidget(new SocialMenuButton(
                 startX, startY, buttonWidth, 30, theme.menuButtons(),
@@ -48,12 +53,24 @@ public class SocialSettingsScreen extends Screen {
                 Component.translatable(delayMode.translationKey()), theme.accentColor(),
                 button -> {
                     delayMode = delayMode.next();
-                    ModMessages.sendToServer(new UpdateSocialSettingsPacket(delayMode));
+                    ModMessages.sendToServer(new UpdateSocialSettingsPacket(delayMode, spontaneousEnabled));
                     rebuildButtons();
                 }
         ));
         addRenderableWidget(new SocialMenuButton(
                 startX, startY + 42, buttonWidth, 30, theme.menuButtons(),
+                Component.translatable("gui.mcasocial.settings.spontaneous"),
+                Component.translatable(spontaneousEnabled ? "gui.mcasocial.settings.on" : "gui.mcasocial.settings.off"),
+                theme.accentColor(),
+                button -> {
+                    spontaneousEnabled = !spontaneousEnabled;
+                    ClientSocialSettings.setSpontaneousEnabled(spontaneousEnabled);
+                    ModMessages.sendToServer(new UpdateSocialSettingsPacket(delayMode, spontaneousEnabled));
+                    rebuildButtons();
+                }
+        ));
+        addRenderableWidget(new SocialMenuButton(
+                startX, startY + 84, buttonWidth, 30, theme.menuButtons(),
                 Component.translatable("gui.mcasocial.back"),
                 button -> Minecraft.getInstance().setScreen(new SocialHomeScreen(
                         interfaceType, delayMode, pendingCount))
@@ -66,16 +83,31 @@ public class SocialSettingsScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         guiGraphics.fill(0, 0, width, height, 0x90000000);
-        guiGraphics.blit(theme.background(), leftPos, topPos, 0, 0,
-                theme.imageWidth(), theme.imageHeight(), theme.textureSize(), theme.textureSize());
+        theme.drawBackground(guiGraphics, leftPos, topPos);
         int centerX = leftPos + theme.imageWidth() / 2;
+        int contentY = theme == SocialInterfaceTheme.MAGIC_MIRROR ? 28 : 0;
         guiGraphics.drawCenteredString(font, Component.translatable("gui.mcasocial.settings.title"),
-                centerX, topPos + 31, theme.titleColor());
+                centerX, topPos + 31 + contentY, theme.titleColor());
         guiGraphics.drawCenteredString(font, Component.translatable("gui.mcasocial.settings.delay.title"),
-                centerX, topPos + 55, theme.accentColor());
-        drawFittedLine(guiGraphics, Component.translatable("gui.mcasocial.settings.delay.description.1"), centerX, topPos + 68);
-        drawFittedLine(guiGraphics, Component.translatable("gui.mcasocial.settings.delay.description.2"), centerX, topPos + 79);
-        drawFittedLine(guiGraphics, Component.translatable("gui.mcasocial.settings.delay.description.3"), centerX, topPos + 90);
+                centerX, topPos + 55 + contentY, theme.accentColor());
+        if (theme == SocialInterfaceTheme.MAGIC_MIRROR) {
+            String description = Component.translatable("gui.mcasocial.settings.delay.description.1").getString()
+                    + " " + Component.translatable("gui.mcasocial.settings.delay.description.2").getString()
+                    + " " + Component.translatable("gui.mcasocial.settings.delay.description.3").getString();
+            List<FormattedCharSequence> lines = font.split(Component.literal(description), 168);
+            float scale = Math.min(0.88F, 44.0F / Math.max(1, lines.size() * 11));
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(centerX, topPos + 94, 0);
+            guiGraphics.pose().scale(scale, scale, 1.0F);
+            for (int i = 0; i < lines.size(); i++) {
+                guiGraphics.drawCenteredString(font, lines.get(i), 0, i * 11, theme.textColor());
+            }
+            guiGraphics.pose().popPose();
+        } else {
+            drawFittedLine(guiGraphics, Component.translatable("gui.mcasocial.settings.delay.description.1"), centerX, topPos + 68);
+            drawFittedLine(guiGraphics, Component.translatable("gui.mcasocial.settings.delay.description.2"), centerX, topPos + 79);
+            drawFittedLine(guiGraphics, Component.translatable("gui.mcasocial.settings.delay.description.3"), centerX, topPos + 90);
+        }
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
 

@@ -1,5 +1,6 @@
 package com.joelj.mcasocial.social;
 
+import forge.net.conczin.mca.entity.VillagerEntityMCA;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
@@ -14,6 +15,8 @@ public class SocialContactHelper {
     public static void remember(ServerPlayer player, Entity entity, ISocialData data,
                                 boolean isBaby, boolean isMinor, SocialAgeStage ageStage,
                                 boolean isFamily, boolean isSpouse) {
+        if (!(entity instanceof VillagerEntityMCA) || !entity.isAlive() || entity.isRemoved()) return;
+        DeceasedVillagers.get(player.server).unmark(entity.getUUID());
         player.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).ifPresent(contacts -> {
             SocialContact contact = contacts.getContact(entity.getUUID());
             if (contact == null) {

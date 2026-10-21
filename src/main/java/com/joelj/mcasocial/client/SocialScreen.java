@@ -88,7 +88,7 @@ public class SocialScreen extends Screen {
         int margenDer = this.leftPos + 79;
         int centroCelularX = this.leftPos + (this.imageWidth / 2);
 
-        int startY = this.topPos + 106;
+        int startY = this.topPos + 120;
         int separacionY = 28;
 
         Component txtAmistad = Component.translatable("gui.mcasocial.conversation.title");
@@ -257,17 +257,14 @@ public class SocialScreen extends Screen {
             guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.title")
                     .append(" ").append(Component.translatable("gui.mcasocial.version")),
                     centroCelularX, this.topPos + 21, 0xFFFFFF);
-            guiGraphics.drawCenteredString(this.font, this.nombre, centroCelularX, this.topPos + 36, 0xFFFFFF);
-
+            ContactPortrait.renderProfileHeader(guiGraphics, this.font, this.contactUuid, this.entityId,
+                    this.nombre, ClientSocialProfile.personalityDisplay(this.personalidad),
+                    this.leftPos, this.topPos, 36, 55, yOffset, SocialInterfaceTheme.PHONE,
+                    0xFFFFFF, 0xAAAAAA, 0x00FFFF);
             guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(centroCelularX, this.topPos + 55, 0);
+            guiGraphics.pose().translate(centroCelularX,
+                    this.topPos + (this.isBaby || this.isMinor || this.isFamily ? 63 : 65), 0);
             guiGraphics.pose().scale(0.95f, 0.95f, 1.0f);
-
-            guiGraphics.drawCenteredString(this.font,
-                    Component.translatable("gui.mcasocial.personality").append(Component.literal(":")),
-                    0, 0, 0xAAAAAA);
-            guiGraphics.drawCenteredString(this.font, ClientSocialProfile.personalityDisplay(this.personalidad),
-                    0, 10, 0x00FFFF);
 
             MutableComponent tagAmistad = Component.translatable("gui.mcasocial.tag.amistad.0");
             if (this.afinidad >= 100) tagAmistad = Component.translatable("gui.mcasocial.tag.amistad.3");
@@ -312,10 +309,24 @@ public class SocialScreen extends Screen {
         }
 
         guiGraphics.pose().popPose();
+        if (!this.mostrarMenuTuerca) {
+            ContactPortrait.renderRefreshTooltip(guiGraphics, this.font, this.contactUuid,
+                    this.leftPos, this.topPos, 36, yOffset, SocialInterfaceTheme.PHONE, mouseX, mouseY);
+        }
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if ((button == 0 || button == 1) && !this.mostrarMenuTuerca) {
+            long elapsed = Util.getMillis() - this.timeOpened;
+            float progress = Math.min(1.0F, elapsed / 350.0F);
+            progress = 1.0F - (float) Math.pow(1.0F - progress, 3);
+            float yOffset = this.height * (1.0F - progress);
+            if (ContactPortrait.refreshAt(this.contactUuid, this.entityId, this.leftPos,
+                    this.topPos, 36, yOffset, SocialInterfaceTheme.PHONE, mouseX, mouseY, button)) {
+                return true;
+            }
+        }
         if (button == 0) {
             long elapsed = Util.getMillis() - this.timeOpened;
             float progress = Math.min(1.0f, elapsed / 350.0f);

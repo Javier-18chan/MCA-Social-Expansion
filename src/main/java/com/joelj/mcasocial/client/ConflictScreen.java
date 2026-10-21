@@ -46,16 +46,17 @@ public class ConflictScreen extends Screen {
         List<Entry> entries = List.of(
                 new Entry("gui.mcasocial.conflict.criticize", "criticar"),
                 new Entry("gui.mcasocial.conflict.confront", "confrontar"),
-                new Entry("gui.mcasocial.conflict.insult", "insultar"),
+                new Entry("gui.mcasocial.conflict.insult", "open_insults"),
                 new Entry("gui.mcasocial.conflict.provoke", "provocar"),
                 new Entry("gui.mcasocial.conflict.apologize", "disculparse"),
+                new Entry("gui.mcasocial.narrative.reconcile", "reconciliar"),
                 new Entry("gui.mcasocial.back", null)
         );
         int visibleRows = theme.friendshipRows();
         scrollOffset = Math.max(0, Math.min(scrollOffset, Math.max(0, entries.size() - visibleRows)));
-        int buttonWidth = 117;
+        int buttonWidth = theme.menuButtonWidth();
         int startX = leftPos + (theme.imageWidth() - buttonWidth) / 2;
-        int startY = topPos + 59;
+        int startY = topPos + 59 + theme.panelOffset();
 
         for (int row = 0; row < visibleRows; row++) {
             int index = scrollOffset + row;
@@ -67,6 +68,9 @@ public class ConflictScreen extends Screen {
                     button -> {
                         if (entry.action() == null) {
                             Minecraft.getInstance().setScreen(previousScreen);
+                        } else if (entry.action().equals("open_insults")) {
+                            Minecraft.getInstance().setScreen(NarrativeChoiceScreen.insults(
+                                    this, theme.id(), entityId, contactUuid, family, contactName));
                         } else {
                             sendAction(entry.action());
                         }
@@ -86,7 +90,7 @@ public class ConflictScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        int maxOffset = Math.max(0, 6 - theme.friendshipRows());
+        int maxOffset = Math.max(0, 7 - theme.friendshipRows());
         if (maxOffset <= 0) return super.mouseScrolled(mouseX, mouseY, delta);
         scrollOffset = Math.max(0, Math.min(maxOffset, scrollOffset + (delta > 0 ? -1 : 1)));
         rebuildButtons();
@@ -99,12 +103,12 @@ public class ConflictScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         guiGraphics.fill(0, 0, width, height, 0x90000000);
-        guiGraphics.blit(theme.background(), leftPos, topPos, 0, 0,
-                theme.imageWidth(), theme.imageHeight(), theme.textureSize(), theme.textureSize());
+        theme.drawBackground(guiGraphics, leftPos, topPos);
         int centerX = leftPos + theme.imageWidth() / 2;
         guiGraphics.drawCenteredString(font, Component.translatable("gui.mcasocial.conflict.title"),
-                centerX, topPos + 31, theme.titleColor());
-        guiGraphics.drawCenteredString(font, contactName, centerX, topPos + 43, theme.accentColor());
+                centerX, topPos + 31 + theme.panelOffset(), theme.titleColor());
+        guiGraphics.drawCenteredString(font, contactName, centerX,
+                topPos + 43 + theme.panelOffset(), theme.accentColor());
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
 

@@ -21,7 +21,7 @@ public final class GiftDialogueResolver {
         if (audience != null) {
             String key = "chat.mcasocial.gift.context." + audience + "." + dialogueRating.dialogueKey() + "." + variant;
             if (role.isFamily() && !role.isSpouse()) {
-                return Component.translatable(key, parentTerm(player), gift.getHoverName());
+                return Component.translatable(key, SocialKinship.address(player, role.uuid(), false), gift.getHoverName());
             }
             return Component.translatable(key, gift.getHoverName());
         }
@@ -89,16 +89,6 @@ public final class GiftDialogueResolver {
             if (rating == GiftRating.NEUTRAL) return GiftRating.LIKED;
         }
         return rating;
-    }
-
-    private static Component parentTerm(ServerPlayer player) {
-        try {
-            var playerData = forge.net.conczin.mca.server.world.data.PlayerSaveData.get(player);
-            if (playerData != null && playerData.getGender().toString().equalsIgnoreCase("FEMALE")) {
-                return Component.translatable("chat.mcasocial.family.parent.mama");
-            }
-        } catch (Exception ignored) {}
-        return Component.translatable("chat.mcasocial.family.parent.papa");
     }
 
     private static String stageKey(SocialAgeStage stage) {

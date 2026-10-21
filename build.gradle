@@ -109,3 +109,16 @@ tasks.named('jar', Jar).configure {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+sourceSets {
+    regressionTest {
+        compileClasspath = sourceSets.main.output
+        runtimeClasspath = output + compileClasspath
+    }
+}
+tasks.register('familyGenerationTest', JavaExec) {
+    dependsOn tasks.named('regressionTestClasses')
+    classpath = sourceSets.regressionTest.runtimeClasspath
+    mainClass = 'com.joelj.mcasocial.social.FamilyGenerationTest'
+}
+tasks.named('check') { dependsOn tasks.named('familyGenerationTest') }

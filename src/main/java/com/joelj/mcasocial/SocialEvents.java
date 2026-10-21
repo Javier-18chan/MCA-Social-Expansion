@@ -16,8 +16,10 @@ import com.joelj.mcasocial.social.SocialContactsProvider;
 import com.joelj.mcasocial.social.SocialInterfaceType;
 import com.joelj.mcasocial.social.SocialProvider;
 import com.joelj.mcasocial.social.DelayedSocialActionService;
+import com.joelj.mcasocial.social.DeceasedVillagers;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -26,6 +28,7 @@ import net.minecraft.world.item.Item;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -40,6 +43,18 @@ public class SocialEvents {
 
     private static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(MCASocialExpansion.MODID, "social_data");
     private static final ResourceLocation CONTACTS_ID = ResourceLocation.fromNamespaceAndPath(MCASocialExpansion.MODID, "social_contacts");
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onVillagerDeath(LivingDeathEvent event) {
+        if (!(event.getEntity() instanceof VillagerEntityMCA villager)
+                || !(villager.level() instanceof ServerLevel level)) return;
+
+        DeceasedVillagers.get(level.getServer()).mark(villager.getUUID());
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+            player.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).ifPresent(contacts ->
+                    contacts.removeContact(villager.getUUID()));
+        }
+    }
 
     @SubscribeEvent
     public static void attachCapabilities(AttachCapabilitiesEvent<Entity> event) {
@@ -63,13 +78,20 @@ public class SocialEvents {
 
         net.minecraft.world.item.Item handItem = player.getMainHandItem().getItem();
         if (handItem != ModItems.SMARTPHONE.get() && handItem != ModItems.CARTA.get()
-                && handItem != ModItems.CRYSTAL.get()) return;
+                && handItem != ModItems.CRYSTAL.get() && handItem != ModItems.MAGIC_MIRROR.get()) return;
 
         int interfaceType = handItem == ModItems.CARTA.get()
                 ? SocialInterfaceType.LETTER
-                : handItem == ModItems.CRYSTAL.get() ? SocialInterfaceType.CRYSTAL : SocialInterfaceType.PHONE;
+                : handItem == ModItems.CRYSTAL.get() ? SocialInterfaceType.CRYSTAL
+                : handItem == ModItems.MAGIC_MIRROR.get() ? SocialInterfaceType.MAGIC_MIRROR
+                : SocialInterfaceType.PHONE;
 
         Entity entity = event.getTarget();
+        if (!entity.isAlive() || entity.isRemoved()) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            return;
+        }
 
         if (!player.level().isClientSide() && player instanceof ServerPlayer serverPlayer) {
 
@@ -200,18 +222,25 @@ public class SocialEvents {
 
         Item item = event.getItemStack().getItem();
         if (item != ModItems.SMARTPHONE.get() && item != ModItems.CARTA.get()
-                && item != ModItems.CRYSTAL.get()) return;
+                && item != ModItems.CRYSTAL.get() && item != ModItems.MAGIC_MIRROR.get()) return;
 
         int interfaceType = item == ModItems.CARTA.get()
                 ? SocialInterfaceType.LETTER
-                : item == ModItems.CRYSTAL.get() ? SocialInterfaceType.CRYSTAL : SocialInterfaceType.PHONE;
+                : item == ModItems.CRYSTAL.get() ? SocialInterfaceType.CRYSTAL
+                : item == ModItems.MAGIC_MIRROR.get() ? SocialInterfaceType.MAGIC_MIRROR
+                : SocialInterfaceType.PHONE;
         Player player = event.getEntity();
         if (!player.level().isClientSide() && player instanceof ServerPlayer serverPlayer) {
             ISocialContacts contacts = serverPlayer.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).orElse(null);
+            if (contacts != null) contacts.setPreferredInterfaceId(interfaceType);
             OpenSocialHomeScreenPacket packet = contacts == null
                     ? new OpenSocialHomeScreenPacket(interfaceType)
                     : new OpenSocialHomeScreenPacket(
-                            interfaceType, contacts.getDeliveryDelayMode(), contacts.getPendingActions().size());
+                            interfaceType, contacts.getDeliveryDelayMode(),
+                            contacts.getPendingActions().size() +
+                                    (int) contacts.getSpontaneousMessages().stream()
+                                            .filter(message -> !message.replied()).count(),
+                            contacts.isSpontaneousEnabled());
             ModMessages.sendToPlayer(packet, serverPlayer);
         }
 
@@ -236,6 +265,7 @@ public class SocialEvents {
         if (!(event.player instanceof ServerPlayer serverPlayer)) return;
         if (serverPlayer.level().getGameTime() % 5L != 0L) return;
         DelayedSocialActionService.tick(serverPlayer);
+        com.joelj.mcasocial.social.SpontaneousMessageService.tick(serverPlayer);
     }
 
     @Mod.EventBusSubscriber(modid = "mcasocial", bus = Mod.EventBusSubscriber.Bus.MOD)

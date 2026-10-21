@@ -35,21 +35,21 @@ public final class RelationshipActionService {
             String key = definition.romanceAction()
                     ? "chat.mcasocial.relationship.denied.romance"
                     : "chat.mcasocial.relationship.denied.affection";
-            sendResult(player, role.name(), key, null, null, null, 0, 0, 0,
+            sendResult(player, role, key, null, null, null, 0, 0, 0,
                     definition.romanceAction(), channel);
             return;
         }
 
         if (!requirementsMet(definition, data, role)) {
             String key = lockedKey(definition, data, role);
-            sendResult(player, role.name(), key, null, null, null, 0, 0, 0,
+            sendResult(player, role, key, null, null, null, 0, 0, 0,
                     definition.romanceAction(), channel);
             return;
         }
 
         long now = System.currentTimeMillis();
         if (now < data.getLockoutTime()) {
-            sendResult(player, role.name(), "chat.mcasocial.global.bloqueado", null, null, null,
+            sendResult(player, role, "chat.mcasocial.global.bloqueado", null, null, null,
                     0, 0, 0, definition.romanceAction(), channel);
             return;
         }
@@ -85,20 +85,20 @@ public final class RelationshipActionService {
             int romancePoints = definition.romanceAction() ? -1 : 0;
             int trustPoints = definition.romanceAction() ? 0 : -1;
             applyPoints(player, entity, data, romancePoints, 0, trustPoints);
-            sendResult(player, role.name(), "chat.mcasocial.global.harto", null, null, null,
+            sendResult(player, role, "chat.mcasocial.global.harto", null, null, null,
                     romancePoints, 0, trustPoints, definition.romanceAction(), channel);
             return;
         }
 
         if (spam && data.getSpamCount() >= neutralLimit) {
-            sendResult(player, role.name(), "chat.mcasocial.global.neutral."
+            sendResult(player, role, "chat.mcasocial.global.neutral."
                             + ThreadLocalRandom.current().nextInt(1, 3), null, null, null,
                     0, 0, 0, definition.romanceAction(), channel);
             return;
         }
 
         if (spam) {
-            sendResult(player, role.name(), "chat.mcasocial.relationship.repeat", null, null, null,
+            sendResult(player, role, "chat.mcasocial.relationship.repeat", null, null, null,
                     0, 0, 0, definition.romanceAction(), channel);
             return;
         }
@@ -148,7 +148,7 @@ public final class RelationshipActionService {
             primaryKey = parentKey;
             parentKey = null;
         }
-        sendResult(player, role.name(), primaryKey, null, null, parentKey,
+        sendResult(player, role, primaryKey, null, null, parentKey,
                 romancePoints, affinityPoints, trustPoints, definition.romanceAction(), channel);
         SocialDiscoveryService.recordInteraction(player, entity, data, action, role);
         spawnFeedback(player, entity, channel, definition.romanceAction(), success);
@@ -287,13 +287,13 @@ public final class RelationshipActionService {
         return Math.floorMod(Objects.hash(player.getUUID(), targetUuid, action, sequence, salt), variants) + 1;
     }
 
-    private static void sendResult(ServerPlayer player, String name, String primaryKey,
+    private static void sendResult(ServerPlayer player, SocialActionService.RoleInfo role, String primaryKey,
                                    @Nullable String personalityKey, @Nullable String progressKey,
                                    @Nullable String parentKey,
                                    int romancePoints, int affinityPoints, int trustPoints,
                                    boolean romanceAction, SocialActionService.InteractionChannel channel) {
-        MutableComponent message = Component.literal(prefix(name, channel))
-                .append(Component.translatable(primaryKey));
+        MutableComponent message = Component.literal(prefix(role.name(), channel))
+                .append(SocialKinship.dialogue(player, role.uuid(), primaryKey));
         if (personalityKey != null) {
             message.append(Component.literal(" ")).append(Component.translatable(personalityKey));
         }
@@ -301,7 +301,7 @@ public final class RelationshipActionService {
             message.append(Component.literal(" ")).append(Component.translatable(progressKey));
         }
         if (parentKey != null) {
-            message.append(Component.literal(" ")).append(Component.translatable(parentKey));
+            message.append(Component.literal(" ")).append(SocialKinship.dialogue(player, role.uuid(), parentKey));
         }
 
         if (romanceAction) {

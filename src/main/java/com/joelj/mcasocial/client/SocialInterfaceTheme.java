@@ -2,6 +2,8 @@ package com.joelj.mcasocial.client;
 
 import com.joelj.mcasocial.MCASocialExpansion;
 import com.joelj.mcasocial.social.SocialInterfaceType;
+import net.minecraft.Util;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 
 public enum SocialInterfaceTheme {
@@ -19,7 +21,14 @@ public enum SocialInterfaceTheme {
             SocialInterfaceType.CRYSTAL, 160, 278, 512,
             "textures/gui/crystal_ui.png", "textures/gui/crystal_buttons_2.png",
             "gui.mcasocial.home.crystal_title", 4, 35, 5, 35
+    ),
+    MAGIC_MIRROR(
+            SocialInterfaceType.MAGIC_MIRROR, 200, 320, 512,
+            "textures/gui/magic_mirror_ui.png", "textures/gui/magic_mirror_menu_buttons.png",
+            "gui.mcasocial.home.magic_mirror_title", 4, 31, 5, 35
     );
+
+    private static final ResourceLocation MIRROR_FLAGS = texture("textures/gui/magic_mirror_flags.png");
 
     private final int id;
     private final int imageWidth;
@@ -53,6 +62,7 @@ public enum SocialInterfaceTheme {
         return switch (SocialInterfaceType.normalize(id)) {
             case SocialInterfaceType.LETTER -> LETTER;
             case SocialInterfaceType.CRYSTAL -> CRYSTAL;
+            case SocialInterfaceType.MAGIC_MIRROR -> MAGIC_MIRROR;
             default -> PHONE;
         };
     }
@@ -66,11 +76,22 @@ public enum SocialInterfaceTheme {
     public int imageHeight() { return imageHeight; }
     public int textureSize() { return textureSize; }
     public ResourceLocation background() { return background; }
+    public void drawBackground(GuiGraphics graphics, int x, int y) {
+        if (this == MAGIC_MIRROR) {
+            graphics.blit(background, x + 16, y + 15, 0, 0, 167, 289, textureSize, textureSize);
+            int frame = (int) ((Util.getMillis() / 300L) % 4);
+            graphics.blit(MIRROR_FLAGS, x, y + 45, frame * 25, 0, 25, 83, 512, 512);
+            graphics.blit(MIRROR_FLAGS, x + 175, y + 45, (frame + 4) * 25, 0, 25, 83, 512, 512);
+        } else {
+            graphics.blit(background, x, y, 0, 0, imageWidth, imageHeight, textureSize, textureSize);
+        }
+    }
     public ResourceLocation menuButtons() { return menuButtons; }
     public ResourceLocation filterButtons() {
         return switch (this) {
             case PHONE -> texture("textures/gui/boton_filtro_celular.png");
             case CRYSTAL -> texture("textures/gui/boton_filtro_crystal.png");
+            case MAGIC_MIRROR -> texture("textures/gui/magic_mirror_filter_buttons.png");
             case LETTER -> texture("textures/gui/boton_filtro.png");
         };
     }
@@ -79,6 +100,7 @@ public enum SocialInterfaceTheme {
             case PHONE -> texture("textures/gui/tuerca_celular.png");
             case LETTER -> texture("textures/gui/tuerca_carta.png");
             case CRYSTAL -> texture("textures/gui/tuerca_crystal.png");
+            case MAGIC_MIRROR -> texture("textures/gui/magic_mirror_gear.png");
         };
     }
     public ResourceLocation settingsHoverTexture() {
@@ -86,6 +108,7 @@ public enum SocialInterfaceTheme {
             case PHONE -> texture("textures/gui/tuerca_celular_hover.png");
             case LETTER -> texture("textures/gui/tuerca_carta_hover.png");
             case CRYSTAL -> texture("textures/gui/tuerca_crystal_hover.png");
+            case MAGIC_MIRROR -> texture("textures/gui/magic_mirror_gear_hover.png");
         };
     }
     public String homeTitleKey() { return homeTitleKey; }
@@ -93,6 +116,8 @@ public enum SocialInterfaceTheme {
     public int contactStep() { return contactStep; }
     public int friendshipRows() { return friendshipRows; }
     public int friendshipStep() { return friendshipStep; }
+    public int menuButtonWidth() { return this == MAGIC_MIRROR ? 125 : 117; }
+    public int panelOffset() { return this == MAGIC_MIRROR ? 40 : 0; }
     public int titleColor() { return this == LETTER ? 0xFFFFFF : 0xFFFFFF; }
     public int textColor() { return this == LETTER ? 0xFFFFFF : 0xFFFFFF; }
     public int mutedColor() { return this == LETTER ? 0xE6E6E6 : 0xAAAAAA; }

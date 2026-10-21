@@ -47,10 +47,10 @@ public class SocialHomeScreen extends Screen {
         this.timeOpened = Util.getMillis();
         SocialUiSounds.playOpen(this.theme);
 
-        int buttonWidth = 117;
+        int buttonWidth = this.theme.menuButtonWidth();
         int buttonHeight = 30;
         int startX = this.leftPos + ((this.theme.imageWidth() - buttonWidth) / 2);
-        int startY = this.topPos + 84;
+        int startY = this.topPos + (this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 105 : 84);
 
         this.addRenderableWidget(new SocialMenuButton(startX, startY, buttonWidth, buttonHeight, this.theme.menuButtons(),
                 Component.translatable("gui.mcasocial.home.contacts"), btn -> ModMessages.sendToServer(new RequestContactsPacket(this.interfaceType))));
@@ -65,11 +65,14 @@ public class SocialHomeScreen extends Screen {
                 btn -> this.minecraft.setScreen(new InterfaceSettingsScreen(
                         this.interfaceType, this.delayMode, this.pendingCount))));
 
-        int gearSize = 16;
+        int gearSize = this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 20 : 16;
         this.settingsButton = this.addRenderableWidget(new SocialIconButton(
-                this.leftPos + this.theme.imageWidth() - 28,
-                this.topPos + 18,
+                this.leftPos + (this.theme == SocialInterfaceTheme.MAGIC_MIRROR
+                        ? 151 : this.theme.imageWidth() - 28),
+                this.topPos + (this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 57 : 18),
                 gearSize,
+                this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 20
+                        : this.theme == SocialInterfaceTheme.PHONE || this.theme == SocialInterfaceTheme.LETTER ? 32 : 64,
                 this.theme.settingsTexture(),
                 this.theme.settingsHoverTexture(),
                 Component.translatable("gui.mcasocial.settings.title"),
@@ -94,13 +97,15 @@ public class SocialHomeScreen extends Screen {
         guiGraphics.pose().scale(motion.scale(), motion.scale(), 1.0F);
         guiGraphics.pose().translate(-centerX, -centerY, 0);
 
-        guiGraphics.blit(this.theme.background(), this.leftPos, this.topPos, 0, 0,
-                this.theme.imageWidth(), this.theme.imageHeight(), this.theme.textureSize(), this.theme.textureSize());
+        this.theme.drawBackground(guiGraphics, this.leftPos, this.topPos);
 
         Component title = Component.translatable(this.theme.homeTitleKey());
-        guiGraphics.drawCenteredString(this.font, title, centerX, this.topPos + 43, this.theme.titleColor());
+        guiGraphics.drawCenteredString(this.font, title, centerX,
+                this.topPos + (this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 61 : 43),
+                this.theme.titleColor());
         guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.version"),
-                centerX, this.topPos + 55, this.theme.mutedColor());
+                centerX, this.topPos + (this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 74 : 55),
+                this.theme.mutedColor());
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         guiGraphics.pose().popPose();
         if (this.settingsButton != null && this.settingsButton.isHoveredOrFocused()) {
@@ -119,6 +124,8 @@ public class SocialHomeScreen extends Screen {
                 float elastic = easeOutBack(progress);
                 yield new HomeMotion(0.0F, 18.0F * (1.0F - eased), 0.92F + 0.08F * elastic);
             }
+            case MAGIC_MIRROR -> new HomeMotion(0.0F, 12.0F * (1.0F - eased),
+                    0.96F + 0.04F * eased);
         };
     }
 

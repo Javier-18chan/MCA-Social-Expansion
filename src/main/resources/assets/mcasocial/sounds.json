@@ -1,0 +1,14 @@
+{
+  "message.sent": {
+    "sounds": ["mcasocial:message/sent"]
+  },
+  "message.phone_received": {
+    "sounds": ["mcasocial:message/phone_received"]
+  },
+  "message.letter_received": {
+    "sounds": ["mcasocial:message/letter_received"]
+  },
+  "message.crystal_received": {
+    "sounds": ["mcasocial:message/crystal_received"]
+  }
+}

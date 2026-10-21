@@ -40,10 +40,11 @@ public class InterfaceSettingsScreen extends Screen {
         super.init();
         this.leftPos = (this.width - this.theme.imageWidth()) / 2;
         this.topPos = (this.height - this.theme.imageHeight()) / 2;
-        int buttonWidth = 117;
+        int buttonWidth = theme.menuButtonWidth();
         int startX = this.leftPos + (this.theme.imageWidth() - buttonWidth) / 2;
         this.addRenderableWidget(new SocialMenuButton(
-                startX, this.topPos + this.theme.imageHeight() - 65,
+                startX, this.topPos + this.theme.imageHeight()
+                        - (this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 92 : 65),
                 buttonWidth, 30, this.theme.menuButtons(),
                 Component.translatable("gui.mcasocial.back"),
                 button -> Minecraft.getInstance().setScreen(new SocialHomeScreen(
@@ -57,24 +58,26 @@ public class InterfaceSettingsScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         guiGraphics.fill(0, 0, this.width, this.height, 0x90000000);
-        guiGraphics.blit(this.theme.background(), this.leftPos, this.topPos, 0, 0,
-                this.theme.imageWidth(), this.theme.imageHeight(), this.theme.textureSize(), this.theme.textureSize());
+        this.theme.drawBackground(guiGraphics, this.leftPos, this.topPos);
 
         int centerX = this.leftPos + this.theme.imageWidth() / 2;
+        int headingOffset = this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 40 : 0;
         guiGraphics.drawCenteredString(this.font, Component.translatable(this.theme.homeTitleKey())
                         .append(" ").append(Component.translatable("gui.mcasocial.version")),
-                centerX, this.topPos + 16, this.theme.titleColor());
+                centerX, this.topPos + 16 + headingOffset, this.theme.titleColor());
         guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.menu.title"),
-                centerX, this.topPos + 32, this.theme.textColor());
+                centerX, this.topPos + 32 + headingOffset, this.theme.textColor());
 
-        int startX = this.leftPos + (this.theme.imageWidth() - 117) / 2;
-        int startY = this.topPos + 65;
+        int startX = this.leftPos + (this.theme.imageWidth() - this.theme.menuButtonWidth()) / 2;
+        int startY = rowStartY();
         drawInterfaceRow(guiGraphics, mouseX, mouseY, startX, startY,
                 SocialInterfaceType.PHONE);
-        drawInterfaceRow(guiGraphics, mouseX, mouseY, startX, startY + 35,
+        drawInterfaceRow(guiGraphics, mouseX, mouseY, startX, startY + 32,
                 SocialInterfaceType.LETTER);
-        drawInterfaceRow(guiGraphics, mouseX, mouseY, startX, startY + 70,
+        drawInterfaceRow(guiGraphics, mouseX, mouseY, startX, startY + 64,
                 SocialInterfaceType.CRYSTAL);
+        drawInterfaceRow(guiGraphics, mouseX, mouseY, startX, startY + 96,
+                SocialInterfaceType.MAGIC_MIRROR);
 
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
@@ -82,13 +85,16 @@ public class InterfaceSettingsScreen extends Screen {
     private void drawInterfaceRow(GuiGraphics guiGraphics, int mouseX, int mouseY, int startX, int y,
                                   int targetInterface) {
         int centerX = this.leftPos + this.theme.imageWidth() / 2;
-        boolean hover = mouseX >= startX && mouseX <= startX + 117 && mouseY >= y && mouseY <= y + 30;
-        guiGraphics.blit(this.theme.menuButtons(), startX, y, 0, hover ? 32 : 0, 117, 30, 256, 256);
+        int rowWidth = this.theme.menuButtonWidth();
+        boolean hover = mouseX >= startX && mouseX <= startX + rowWidth && mouseY >= y && mouseY <= y + 30;
+        guiGraphics.blit(this.theme.menuButtons(), startX, y, rowWidth, 30,
+                0.0F, hover ? 32.0F : 0.0F, 117, 30, 256, 256);
 
         if (this.interfaceType == targetInterface) {
             String labelKey = switch (targetInterface) {
                 case SocialInterfaceType.LETTER -> "gui.mcasocial.menu.carta_desbloqueada";
                 case SocialInterfaceType.CRYSTAL -> "gui.mcasocial.menu.crystal";
+                case SocialInterfaceType.MAGIC_MIRROR -> "gui.mcasocial.menu.magic_mirror";
                 default -> "gui.mcasocial.menu.celular";
             };
             guiGraphics.drawCenteredString(this.font, Component.translatable(labelKey),
@@ -106,9 +112,10 @@ public class InterfaceSettingsScreen extends Screen {
         ItemStack stack = switch (targetInterface) {
             case SocialInterfaceType.LETTER -> new ItemStack(ModItems.CARTA.get());
             case SocialInterfaceType.CRYSTAL -> new ItemStack(ModItems.CRYSTAL.get());
+            case SocialInterfaceType.MAGIC_MIRROR -> new ItemStack(ModItems.MAGIC_MIRROR.get());
             default -> new ItemStack(ModItems.SMARTPHONE.get());
         };
-        int iconX = startX + 8;
+        int iconX = startX + (this.theme.menuButtonWidth() - 117) / 2 + 8;
         int iconY = y + 7;
 
         guiGraphics.pose().pushPose();
@@ -121,6 +128,7 @@ public class InterfaceSettingsScreen extends Screen {
     }
 
     private void drawCost(GuiGraphics guiGraphics, int startX, int itemY, int targetInterface) {
+        startX += (this.theme.menuButtonWidth() - 117) / 2;
         if (targetInterface == SocialInterfaceType.PHONE) {
             drawItemWithCount(guiGraphics, Items.IRON_INGOT, startX + 31, itemY, "x7");
             drawItemWithCount(guiGraphics, Items.REDSTONE, startX + 62, itemY, "x1");
@@ -128,6 +136,11 @@ public class InterfaceSettingsScreen extends Screen {
         } else if (targetInterface == SocialInterfaceType.LETTER) {
             drawItemWithCount(guiGraphics, Items.PAPER, startX + 43, itemY, "x4");
             drawItemWithCount(guiGraphics, Items.LEATHER, startX + 78, itemY, "x1");
+        } else if (targetInterface == SocialInterfaceType.MAGIC_MIRROR) {
+            drawCompactCost(guiGraphics, Items.GOLD_INGOT, 6, startX + 28, itemY);
+            drawCompactCost(guiGraphics, Items.AMETHYST_SHARD, 1, startX + 49, itemY);
+            drawCompactCost(guiGraphics, Items.GLASS_PANE, 1, startX + 70, itemY);
+            drawCompactCost(guiGraphics, Items.REDSTONE, 1, startX + 91, itemY);
         } else {
             drawItemWithCount(guiGraphics, Items.DIAMOND, startX + 31, itemY, "x1");
             drawItemWithCount(guiGraphics, Items.AMETHYST_SHARD, startX + 62, itemY, "x3");
@@ -141,14 +154,22 @@ public class InterfaceSettingsScreen extends Screen {
         guiGraphics.drawString(this.font, count, x + 16, y + 4, 0xCCCCCC, false);
     }
 
+    private void drawCompactCost(GuiGraphics guiGraphics, net.minecraft.world.item.Item item,
+                                 int count, int x, int y) {
+        ItemStack stack = new ItemStack(item, count);
+        guiGraphics.renderItem(stack, x, y);
+        guiGraphics.renderItemDecorations(this.font, stack, x, y);
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
-            int startX = this.leftPos + (this.theme.imageWidth() - 117) / 2;
-            int startY = this.topPos + 65;
-            for (int target = SocialInterfaceType.PHONE; target <= SocialInterfaceType.CRYSTAL; target++) {
-                int y = startY + target * 35;
-                if (target != this.interfaceType && mouseX >= startX && mouseX <= startX + 117
+            int startX = this.leftPos + (this.theme.imageWidth() - this.theme.menuButtonWidth()) / 2;
+            int startY = rowStartY();
+            for (int target = SocialInterfaceType.PHONE; target <= SocialInterfaceType.MAGIC_MIRROR; target++) {
+                int y = startY + target * 32;
+                if (target != this.interfaceType && mouseX >= startX
+                        && mouseX <= startX + this.theme.menuButtonWidth()
                         && mouseY >= y && mouseY <= y + 30) {
                     ModMessages.sendToServer(new MorphInterfacePacket(target));
                     return true;
@@ -160,6 +181,10 @@ public class InterfaceSettingsScreen extends Screen {
 
     public void openAfterMorph(int targetInterface) {
         Minecraft.getInstance().setScreen(new SocialHomeScreen(targetInterface, delayMode, pendingCount));
+    }
+
+    private int rowStartY() {
+        return topPos + (theme == SocialInterfaceTheme.MAGIC_MIRROR ? 95 : 55);
     }
 
     @Override

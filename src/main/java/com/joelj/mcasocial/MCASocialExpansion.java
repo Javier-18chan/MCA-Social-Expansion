@@ -2,6 +2,7 @@ package com.joelj.mcasocial;
 
 import com.joelj.mcasocial.item.ModItems;
 import com.joelj.mcasocial.network.ModMessages;
+import com.joelj.mcasocial.sound.ModSounds;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
@@ -28,12 +29,14 @@ public class MCASocialExpansion {
                         output.accept(ModItems.SMARTPHONE.get());
                         output.accept(ModItems.CARTA.get());
                         output.accept(ModItems.CRYSTAL.get());
+                        output.accept(ModItems.MAGIC_MIRROR.get());
                     }).build());
 
     public MCASocialExpansion(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
 
         ModItems.register(modEventBus);
+        ModSounds.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
     }

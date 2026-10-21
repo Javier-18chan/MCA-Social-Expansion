@@ -94,7 +94,7 @@ public class CrystalSocialScreen extends Screen {
         int leftX = this.leftPos + 12;
         int rightX = this.leftPos + 83;
         int centerX = this.leftPos + IMAGE_WIDTH / 2;
-        int startY = this.topPos + 108;
+        int startY = this.topPos + 122;
         int stepY = 28;
 
         Component friendship = Component.translatable("gui.mcasocial.conversation.title");
@@ -128,6 +128,12 @@ public class CrystalSocialScreen extends Screen {
 
     public void morphToCard() {
         Minecraft.getInstance().setScreen(new CardSocialScreen(
+                this.entityId, this.nombre, this.personalidad, this.afinidad, this.romance, this.trust,
+                this.isBaby, this.isMinor, this.isFamily, this.isSpouse, this.ageStage, this.contactUuid));
+    }
+
+    public void morphToMagicMirror() {
+        Minecraft.getInstance().setScreen(new MagicMirrorSocialScreen(
                 this.entityId, this.nombre, this.personalidad, this.afinidad, this.romance, this.trust,
                 this.isBaby, this.isMinor, this.isFamily, this.isSpouse, this.ageStage, this.contactUuid));
     }
@@ -198,28 +204,30 @@ public class CrystalSocialScreen extends Screen {
         if (this.gearMenuOpen) {
             renderGearMenu(guiGraphics, mouseX, mouseY, yOffset);
         } else {
-            renderSocialView(guiGraphics, mouseX, mouseY, partialTicks);
+            renderSocialView(guiGraphics, mouseX, mouseY, partialTicks, yOffset);
         }
 
         guiGraphics.pose().popPose();
+        if (!this.gearMenuOpen) {
+            ContactPortrait.renderRefreshTooltip(guiGraphics, this.font, this.contactUuid,
+                    this.leftPos, this.topPos, 36, yOffset, SocialInterfaceTheme.CRYSTAL, mouseX, mouseY);
+        }
     }
 
-    private void renderSocialView(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+    private void renderSocialView(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks,
+                                  float yOffset) {
         int centerX = this.leftPos + IMAGE_WIDTH / 2;
         guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.home.crystal_title")
                         .append(" ").append(Component.translatable("gui.mcasocial.version")),
                 centerX, this.topPos + 21, 0x7FDBFF);
-        guiGraphics.drawCenteredString(this.font, this.nombre, centerX, this.topPos + 36, 0xFFFFFF);
-
+        ContactPortrait.renderProfileHeader(guiGraphics, this.font, this.contactUuid, this.entityId,
+                this.nombre, ClientSocialProfile.personalityDisplay(this.personalidad),
+                this.leftPos, this.topPos, 36, 55, yOffset, SocialInterfaceTheme.CRYSTAL,
+                0xFFFFFF, 0x8290B8, 0x91A7FF);
         guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(centerX, this.topPos + 55, 0);
+        guiGraphics.pose().translate(centerX,
+                this.topPos + (this.isBaby || this.isMinor || this.isFamily ? 63 : 65), 0);
         guiGraphics.pose().scale(0.95F, 0.95F, 1.0F);
-
-        guiGraphics.drawCenteredString(this.font,
-                Component.translatable("gui.mcasocial.personality").append(Component.literal(":")),
-                0, 0, 0x8290B8);
-        guiGraphics.drawCenteredString(this.font, ClientSocialProfile.personalityDisplay(this.personalidad),
-                0, 10, 0x91A7FF);
 
         MutableComponent friendshipTag = Component.translatable("gui.mcasocial.tag.amistad.0");
         if (this.afinidad >= 100) friendshipTag = Component.translatable("gui.mcasocial.tag.amistad.3");
@@ -300,12 +308,12 @@ public class CrystalSocialScreen extends Screen {
         guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.menu.crystal"),
                 centerX, activeY + 10, activeHover ? 0x9EEBFF : 0xFFFFFF);
 
-        for (int row = 3; row < 5; row++) {
-            int y = startY + row * 35;
-            guiGraphics.blit(MENU_BUTTONS, startX, y, 0, 64, 117, 30, 256, 256);
-            guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.menu.proximamente"),
-                    centerX, y + 10, 0x888FA8);
-        }
+        drawConversionRow(guiGraphics, mouseX, mouseY, yOffset, slideOffset, startX, startY + 105,
+                SocialInterfaceType.MAGIC_MIRROR);
+        int futureY = startY + 140;
+        guiGraphics.blit(MENU_BUTTONS, startX, futureY, 0, 64, 117, 30, 256, 256);
+        guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.menu.proximamente"),
+                centerX, futureY + 10, 0x888FA8);
         guiGraphics.pose().popPose();
     }
 
@@ -325,12 +333,24 @@ public class CrystalSocialScreen extends Screen {
             guiGraphics.drawString(this.font, "x1", centerX + 3, itemY + 4, 0xCCCCCC, false);
             guiGraphics.renderItem(new ItemStack(Items.GLASS_PANE), centerX + 21, itemY);
             guiGraphics.drawString(this.font, "x1", centerX + 37, itemY + 4, 0xCCCCCC, false);
+        } else if (targetInterface == SocialInterfaceType.MAGIC_MIRROR) {
+            drawCompactCost(guiGraphics, Items.GOLD_INGOT, 6, startX + 12, itemY);
+            drawCompactCost(guiGraphics, Items.AMETHYST_SHARD, 1, startX + 36, itemY);
+            drawCompactCost(guiGraphics, Items.GLASS_PANE, 1, startX + 60, itemY);
+            drawCompactCost(guiGraphics, Items.REDSTONE, 1, startX + 84, itemY);
         } else {
             guiGraphics.renderItem(new ItemStack(Items.PAPER), centerX - 32, itemY);
             guiGraphics.drawString(this.font, "x4", centerX - 16, itemY + 4, 0xCCCCCC, false);
             guiGraphics.renderItem(new ItemStack(Items.LEATHER), centerX + 4, itemY);
             guiGraphics.drawString(this.font, "x1", centerX + 20, itemY + 4, 0xCCCCCC, false);
         }
+    }
+
+    private void drawCompactCost(GuiGraphics guiGraphics, net.minecraft.world.item.Item item,
+                                 int count, int x, int y) {
+        ItemStack stack = new ItemStack(item, count);
+        guiGraphics.renderItem(stack, x, y);
+        guiGraphics.renderItemDecorations(this.font, stack, x, y);
     }
 
     private boolean isRowHovered(double mouseX, double mouseY, float yOffset, int slideOffset, int startX, int y) {
@@ -340,6 +360,16 @@ public class CrystalSocialScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if ((button == 0 || button == 1) && !this.gearMenuOpen) {
+            long elapsed = Util.getMillis() - this.timeOpened;
+            float progress = Math.min(1.0F, elapsed / 350.0F);
+            progress = 1.0F - (float) Math.pow(1.0F - progress, 3);
+            float yOffset = this.height * (1.0F - progress);
+            if (ContactPortrait.refreshAt(this.contactUuid, this.entityId, this.leftPos,
+                    this.topPos, 36, yOffset, SocialInterfaceTheme.CRYSTAL, mouseX, mouseY, button)) {
+                return true;
+            }
+        }
         if (button == 0) {
             long elapsed = Util.getMillis() - this.timeOpened;
             float progress = Math.min(1.0F, elapsed / 350.0F);
@@ -375,6 +405,11 @@ public class CrystalSocialScreen extends Screen {
                 }
                 if (isRowHovered(mouseX, mouseY, yOffset, slideOffset, startX, startY + 70)) {
                     this.gearMenuOpen = false;
+                    return true;
+                }
+                if (isRowHovered(mouseX, mouseY, yOffset, slideOffset, startX, startY + 105)) {
+                    playClick(1.15F);
+                    ModMessages.sendToServer(new MorphInterfacePacket(SocialInterfaceType.MAGIC_MIRROR));
                     return true;
                 }
                 return true;

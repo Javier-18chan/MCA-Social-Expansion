@@ -18,6 +18,12 @@ public class ClientScreenOpener {
                     data.romance, data.trust, data.isBaby, data.isMinor, data.isFamily, data.isSpouse,
                     data.ageStage, data.contactUuid
             ));
+        } else if (data.interfaceType == SocialInterfaceType.MAGIC_MIRROR) {
+            Minecraft.getInstance().setScreen(new MagicMirrorSocialScreen(
+                    data.entityId, data.nombre, data.personalidad, data.afinidad,
+                    data.romance, data.trust, data.isBaby, data.isMinor, data.isFamily, data.isSpouse,
+                    data.ageStage, data.contactUuid
+            ));
         } else if (data.interfaceType == SocialInterfaceType.CRYSTAL) {
             Minecraft.getInstance().setScreen(new CrystalSocialScreen(
                     data.entityId, data.nombre, data.personalidad, data.afinidad,
@@ -38,11 +44,13 @@ public class ClientScreenOpener {
     }
 
     public static void openHome(OpenSocialHomeScreenPacket data) {
+        ClientSocialSettings.setSpontaneousEnabled(data.spontaneousEnabled);
         Minecraft.getInstance().setScreen(new SocialHomeScreen(data.interfaceType, data.delayMode, data.pendingCount));
     }
 
     public static void openInbox(OpenInboxScreenPacket data) {
-        Minecraft.getInstance().setScreen(new InboxScreen(data.entries, data.interfaceType, data.delayMode));
+        Minecraft.getInstance().setScreen(new InboxScreen(data.entries, data.incomingEntries,
+                data.interfaceType, data.delayMode));
     }
 
     public static void syncMorph(SyncMorphPacket data) {
@@ -56,6 +64,7 @@ public class ClientScreenOpener {
         } else if (mc.screen instanceof CrystalSocialScreen crystal) {
             if (data.targetInterface == SocialInterfaceType.PHONE) crystal.morphToPhone();
             else if (data.targetInterface == SocialInterfaceType.LETTER) crystal.morphToCard();
+            else if (data.targetInterface == SocialInterfaceType.MAGIC_MIRROR) crystal.morphToMagicMirror();
         } else if (mc.screen instanceof InterfaceSettingsScreen settings) {
             settings.openAfterMorph(data.targetInterface);
         }

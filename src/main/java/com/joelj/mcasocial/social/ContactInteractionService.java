@@ -1,7 +1,6 @@
 package com.joelj.mcasocial.social;
 
 import forge.net.conczin.mca.entity.VillagerEntityMCA;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
@@ -17,7 +16,13 @@ public final class ContactInteractionService {
         SocialContact contact = contacts.getContact(contactUuid);
         if (contact == null) return false;
 
-        Entity loadedEntity = ((ServerLevel) player.level()).getEntity(contactUuid);
+        if (DeceasedVillagers.get(player.server).contains(contactUuid)) {
+            contacts.removeContact(contactUuid);
+            return false;
+        }
+
+        Entity loadedEntity = ContactRosterService.findLoaded(player.server, contactUuid);
+        if (loadedEntity != null && !loadedEntity.isAlive()) return false;
         if (loadedEntity != null) {
             ISocialData data = loadedEntity.getCapability(SocialCapability.SOCIAL_CAPABILITY).orElse(null);
             if (data == null) return false;
@@ -39,7 +44,7 @@ public final class ContactInteractionService {
                     inspected.isMinor(),
                     inspected.isFamily() || contact.isFamily(),
                     inspected.isSpouse() || contact.isSpouse(),
-                    inspected.ageStage()
+                    inspected.ageStage(), inspected.uuid()
             );
             SocialActionService.InteractionChannel channel = SocialActionService.InteractionChannel.fromInterfaceType(interfaceType);
             if (SocialDiscoveryService.isDiscoveryAction(action)) {
@@ -59,7 +64,7 @@ public final class ContactInteractionService {
                     contact.isMinor(),
                     contact.isFamily(),
                     contact.isSpouse(),
-                    contact.getAgeStage()
+                    contact.getAgeStage(), contact.getUuid()
             );
             SocialActionService.InteractionChannel channel = SocialActionService.InteractionChannel.fromInterfaceType(interfaceType);
             if (SocialDiscoveryService.isDiscoveryAction(action)) {

@@ -17,14 +17,14 @@ public enum DeliveryDelayMode {
         if (this == SHORT) {
             return switch (normalized) {
                 case SocialInterfaceType.LETTER -> 80;
-                case SocialInterfaceType.CRYSTAL -> 40;
+                case SocialInterfaceType.CRYSTAL, SocialInterfaceType.MAGIC_MIRROR -> 40;
                 default -> 20;
             };
         }
 
         return switch (normalized) {
             case SocialInterfaceType.LETTER -> 240;
-            case SocialInterfaceType.CRYSTAL -> 100;
+            case SocialInterfaceType.CRYSTAL, SocialInterfaceType.MAGIC_MIRROR -> 100;
             default -> 60;
         };
     }

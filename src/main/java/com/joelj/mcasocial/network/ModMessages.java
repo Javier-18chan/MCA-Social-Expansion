@@ -9,7 +9,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public class ModMessages {
-    private static final String PROTOCOL_VERSION = "2.0";
+    private static final String PROTOCOL_VERSION = "2.3";
     private static SimpleChannel INSTANCE;
     private static int packetId = 0;
 
@@ -40,6 +40,7 @@ public class ModMessages {
         net.messageBuilder(UpdateSocialSettingsPacket.class, id(), NetworkDirection.PLAY_TO_SERVER).decoder(UpdateSocialSettingsPacket::new).encoder(UpdateSocialSettingsPacket::toBytes).consumerMainThread(UpdateSocialSettingsPacket::handle).add();
         net.messageBuilder(RequestInboxPacket.class, id(), NetworkDirection.PLAY_TO_SERVER).decoder(RequestInboxPacket::new).encoder(RequestInboxPacket::toBytes).consumerMainThread(RequestInboxPacket::handle).add();
         net.messageBuilder(OpenInboxScreenPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT).decoder(OpenInboxScreenPacket::new).encoder(OpenInboxScreenPacket::toBytes).consumerMainThread(OpenInboxScreenPacket::handle).add();
+        net.messageBuilder(ReplySpontaneousMessagePacket.class, id(), NetworkDirection.PLAY_TO_SERVER).decoder(ReplySpontaneousMessagePacket::new).encoder(ReplySpontaneousMessagePacket::toBytes).consumerMainThread(ReplySpontaneousMessagePacket::handle).add();
     }
 
     public static <MSG> void sendToServer(MSG message) { INSTANCE.sendToServer(message); }

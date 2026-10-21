@@ -37,7 +37,7 @@ public final class GiftInteractionService {
         SocialActionService.RoleInfo role = new SocialActionService.RoleInfo(
                 detectedRole.name(), detectedRole.isBaby(), detectedRole.isMinor(),
                 family, spouse,
-                detectedRole.ageStage()
+                detectedRole.ageStage(), detectedRole.uuid()
         );
 
         if (!GiftEligibility.canGift(gift)) {

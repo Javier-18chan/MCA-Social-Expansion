@@ -2,6 +2,7 @@ package com.joelj.mcasocial.network;
 
 import com.joelj.mcasocial.item.ModItems;
 import com.joelj.mcasocial.social.SocialInterfaceType;
+import com.joelj.mcasocial.social.SocialContactsCapability;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -71,6 +72,26 @@ public class MorphInterfacePacket {
                 } else {
                     player.level().playSound(null, player.blockPosition(), net.minecraft.sounds.SoundEvents.VILLAGER_NO, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
                 }
+            } else if (this.targetInterface == SocialInterfaceType.MAGIC_MIRROR) {
+                if (hasItems(player, Items.GOLD_INGOT, 6)
+                        && hasItems(player, Items.AMETHYST_SHARD, 1)
+                        && hasItems(player, Items.GLASS_PANE, 1)
+                        && hasItems(player, Items.REDSTONE, 1)) {
+                    quitarItems(player, Items.GOLD_INGOT, 6);
+                    quitarItems(player, Items.AMETHYST_SHARD, 1);
+                    quitarItems(player, Items.GLASS_PANE, 1);
+                    quitarItems(player, Items.REDSTONE, 1);
+                    swapHeldSocialItem(player, ModItems.MAGIC_MIRROR.get());
+
+                    player.level().playSound(null, player.blockPosition(),
+                            net.minecraft.sounds.SoundEvents.AMETHYST_BLOCK_CHIME,
+                            net.minecraft.sounds.SoundSource.PLAYERS, 0.6F, 1.0F);
+                    ModMessages.sendToPlayer(new SyncMorphPacket(SocialInterfaceType.MAGIC_MIRROR), player);
+                } else {
+                    player.level().playSound(null, player.blockPosition(),
+                            net.minecraft.sounds.SoundEvents.VILLAGER_NO,
+                            net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+                }
             }
         });
         context.setPacketHandled(true);
@@ -108,12 +129,14 @@ public class MorphInterfacePacket {
     }
 
     private boolean isSocialItem(ItemStack stack) {
-        return stack.is(ModItems.SMARTPHONE.get()) || stack.is(ModItems.CARTA.get()) || stack.is(ModItems.CRYSTAL.get());
+        return stack.is(ModItems.SMARTPHONE.get()) || stack.is(ModItems.CARTA.get())
+                || stack.is(ModItems.CRYSTAL.get()) || stack.is(ModItems.MAGIC_MIRROR.get());
     }
 
     private int interfaceId(ItemStack stack) {
         if (stack.is(ModItems.CARTA.get())) return SocialInterfaceType.LETTER;
         if (stack.is(ModItems.CRYSTAL.get())) return SocialInterfaceType.CRYSTAL;
+        if (stack.is(ModItems.MAGIC_MIRROR.get())) return SocialInterfaceType.MAGIC_MIRROR;
         return SocialInterfaceType.PHONE;
     }
 
@@ -123,5 +146,7 @@ public class MorphInterfacePacket {
         } else if (isSocialItem(player.getOffhandItem())) {
             player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, new ItemStack(newItem));
         }
+        player.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).ifPresent(contacts ->
+                contacts.setPreferredInterfaceId(interfaceId(new ItemStack(newItem))));
     }
 }

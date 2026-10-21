@@ -73,10 +73,10 @@ public class FriendshipScreen extends Screen {
     private void rebuildButtons() {
         this.clearWidgets();
 
-        int buttonWidth = 117;
+        int buttonWidth = this.theme.menuButtonWidth();
         int buttonHeight = 30;
         int startX = this.leftPos + ((this.theme.imageWidth() - buttonWidth) / 2);
-        int startY = this.topPos + 59;
+        int startY = this.topPos + 59 + this.theme.panelOffset();
         int stepY = this.theme.friendshipStep();
         List<MenuEntry> entries = menuEntries();
         int visibleRows = visibleRows();
@@ -93,7 +93,14 @@ public class FriendshipScreen extends Screen {
                 this.addRenderableWidget(new SocialMenuButton(startX, y, buttonWidth, buttonHeight, this.theme.menuButtons(),
                         Component.translatable(entry.labelKey()), btn -> openPreviousScreen()));
             } else {
-                addActionButton(startX, y, buttonWidth, buttonHeight, this.theme.menuButtons(), entry.labelKey(), entry.action());
+                if (entry.action().equals("open_topics")) {
+                    this.addRenderableWidget(new SocialMenuButton(startX, y, buttonWidth, buttonHeight,
+                            this.theme.menuButtons(), Component.translatable(entry.labelKey()),
+                            button -> Minecraft.getInstance().setScreen(NarrativeChoiceScreen.topics(
+                                    this, interfaceType, entityId, contactUuid, isFamily, nombre))));
+                } else {
+                    addActionButton(startX, y, buttonWidth, buttonHeight, this.theme.menuButtons(), entry.labelKey(), entry.action());
+                }
             }
         }
     }
@@ -112,6 +119,8 @@ public class FriendshipScreen extends Screen {
                 new MenuEntry("gui.mcasocial.friendship.story", "contar_anecdota"),
                 new MenuEntry("gui.mcasocial.friendship.support", "dar_apoyo")
         ));
+
+        entries.add(new MenuEntry("gui.mcasocial.narrative.topics", "open_topics"));
 
         if (this.isSpouse && !this.isBaby && !this.isMinor) {
             entries.add(new MenuEntry("gui.mcasocial.friendship.spouse_vows", "recordar_votos"));
@@ -143,6 +152,10 @@ public class FriendshipScreen extends Screen {
             Minecraft.getInstance().setScreen(new CrystalSocialScreen(this.entityId, this.nombre, this.personalidad, this.afinidad,
                     this.romance, this.trust, this.isBaby, this.isMinor, this.isFamily, this.isSpouse,
                     this.ageStage, this.contactUuid));
+        } else if (this.interfaceType == SocialInterfaceTheme.MAGIC_MIRROR.id()) {
+            Minecraft.getInstance().setScreen(new MagicMirrorSocialScreen(this.entityId, this.nombre, this.personalidad, this.afinidad,
+                    this.romance, this.trust, this.isBaby, this.isMinor, this.isFamily, this.isSpouse,
+                    this.ageStage, this.contactUuid));
         } else {
             Minecraft.getInstance().setScreen(new SocialScreen(this.entityId, this.nombre, this.personalidad, this.afinidad,
                     this.romance, this.trust, this.isBaby, this.isMinor, this.isFamily, this.isSpouse,
@@ -156,16 +169,17 @@ public class FriendshipScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         guiGraphics.fill(0, 0, this.width, this.height, 0x90000000);
-        guiGraphics.blit(this.theme.background(), this.leftPos, this.topPos, 0, 0,
-                this.theme.imageWidth(), this.theme.imageHeight(), this.theme.textureSize(), this.theme.textureSize());
+        this.theme.drawBackground(guiGraphics, this.leftPos, this.topPos);
         int centerX = this.leftPos + this.theme.imageWidth() / 2;
-        int titleY = this.topPos + (this.theme == SocialInterfaceTheme.PHONE ? 20 : 16);
+        int titleY = this.topPos + (this.theme == SocialInterfaceTheme.PHONE ? 20 : 16)
+                + this.theme.panelOffset();
         guiGraphics.drawCenteredString(this.font, Component.translatable(this.theme.homeTitleKey())
                         .append(" ").append(Component.translatable("gui.mcasocial.version")),
                 centerX, titleY, this.theme.titleColor());
         guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.conversation.title"),
-                centerX, this.topPos + 32, this.theme.textColor());
-        guiGraphics.drawCenteredString(this.font, this.nombre, centerX, this.topPos + 44, this.theme.accentColor());
+                centerX, this.topPos + 32 + this.theme.panelOffset(), this.theme.textColor());
+        guiGraphics.drawCenteredString(this.font, this.nombre, centerX,
+                this.topPos + 44 + this.theme.panelOffset(), this.theme.accentColor());
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
 

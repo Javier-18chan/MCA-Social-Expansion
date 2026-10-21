@@ -70,10 +70,10 @@ public class HumorScreen extends Screen {
         int maxOffset = Math.max(0, entries.size() - visibleRows);
         this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, maxOffset));
 
-        int buttonWidth = 117;
+        int buttonWidth = this.theme.menuButtonWidth();
         int buttonHeight = 30;
         int startX = this.leftPos + (this.theme.imageWidth() - buttonWidth) / 2;
-        int startY = this.topPos + 59;
+        int startY = this.topPos + 59 + this.theme.panelOffset();
 
         for (int row = 0; row < visibleRows; row++) {
             int entryIndex = this.scrollOffset + row;
@@ -113,6 +113,10 @@ public class HumorScreen extends Screen {
             Minecraft.getInstance().setScreen(new CrystalSocialScreen(
                     this.entityId, this.name, this.personality, this.affinity, this.romance, this.trust,
                     this.baby, this.minor, this.family, this.spouse, this.ageStage, this.contactUuid));
+        } else if (this.interfaceType == SocialInterfaceType.MAGIC_MIRROR) {
+            Minecraft.getInstance().setScreen(new MagicMirrorSocialScreen(
+                    this.entityId, this.name, this.personality, this.affinity, this.romance, this.trust,
+                    this.baby, this.minor, this.family, this.spouse, this.ageStage, this.contactUuid));
         } else {
             Minecraft.getInstance().setScreen(new SocialScreen(
                     this.entityId, this.name, this.personality, this.affinity, this.romance, this.trust,
@@ -126,18 +130,18 @@ public class HumorScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         guiGraphics.fill(0, 0, this.width, this.height, 0x90000000);
-        guiGraphics.blit(this.theme.background(), this.leftPos, this.topPos, 0, 0,
-                this.theme.imageWidth(), this.theme.imageHeight(),
-                this.theme.textureSize(), this.theme.textureSize());
+        this.theme.drawBackground(guiGraphics, this.leftPos, this.topPos);
 
         int centerX = this.leftPos + this.theme.imageWidth() / 2;
-        int titleY = this.topPos + (this.theme == SocialInterfaceTheme.PHONE ? 20 : 16);
+        int titleY = this.topPos + (this.theme == SocialInterfaceTheme.PHONE ? 20 : 16)
+                + this.theme.panelOffset();
         guiGraphics.drawCenteredString(this.font, Component.translatable(this.theme.homeTitleKey())
                         .append(" ").append(Component.translatable("gui.mcasocial.version")),
                 centerX, titleY, this.theme.titleColor());
         guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mcasocial.humor.title"),
-                centerX, this.topPos + 32, this.theme.textColor());
-        guiGraphics.drawCenteredString(this.font, this.name, centerX, this.topPos + 44, this.theme.accentColor());
+                centerX, this.topPos + 32 + this.theme.panelOffset(), this.theme.textColor());
+        guiGraphics.drawCenteredString(this.font, this.name, centerX,
+                this.topPos + 44 + this.theme.panelOffset(), this.theme.accentColor());
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
 

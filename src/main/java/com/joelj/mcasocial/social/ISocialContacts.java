@@ -19,9 +19,36 @@ public interface ISocialContacts {
 
     void setDeliveryDelayMode(DeliveryDelayMode mode);
 
+    int getPreferredInterfaceId();
+
+    void setPreferredInterfaceId(int interfaceType);
+
     List<PendingSocialAction> getPendingActions();
 
     boolean queueAction(PendingSocialAction action);
 
     List<PendingSocialAction> removeDueActions(long gameTime);
+
+    boolean isSpontaneousEnabled();
+
+    void setSpontaneousEnabled(boolean enabled);
+
+    long getNextSpontaneousCheck();
+
+    void setNextSpontaneousCheck(long gameTime);
+
+    int getSpontaneousCount(long day);
+
+    void recordSpontaneousMessage(long day);
+
+    List<SpontaneousSocialMessage> getSpontaneousMessages();
+
+    void addSpontaneousMessage(SpontaneousSocialMessage message);
+
+    List<SpontaneousSocialMessage> deliverSpontaneousMessages(long gameTime,
+                                                              java.util.function.Function<SpontaneousSocialMessage, String> dialogueKeySelector);
+
+    SpontaneousSocialMessage replyToSpontaneousMessage(UUID messageId, String responseKey, long responseGameTime);
+
+    List<SpontaneousSocialMessage> deliverSpontaneousReplies(long gameTime);
 }

@@ -45,10 +45,15 @@ public class SocialInteractPacket {
             if (player == null || !SocialActionService.isValidAction(this.accion)) return;
 
             Entity entity = player.level().getEntity(this.entityId);
-            if (entity == null) return;
+            if (entity == null || !entity.isAlive() || entity.isRemoved()
+                    || player.distanceToSqr(entity) > 64.0D) return;
+            if (com.joelj.mcasocial.social.SocialNarrativeService.isNarrativeAction(this.accion)
+                    && (!entity.isAlive() || player.distanceToSqr(entity) > 64.0)) return;
 
             entity.getCapability(SocialCapability.SOCIAL_CAPABILITY).ifPresent(data -> {
-                SocialActionService.RoleInfo role = SocialActionService.inspectRole(entity, player, this.isFamily);
+                boolean narrative = com.joelj.mcasocial.social.SocialNarrativeService.isNarrativeAction(this.accion);
+                SocialActionService.RoleInfo role = SocialActionService.inspectRole(entity, player,
+                        narrative ? false : this.isFamily);
                 if (SocialDiscoveryService.isDiscoveryAction(this.accion)) {
                     SocialContactHelper.remember(player, entity, data, role.isBaby(), role.isMinor(),
                             role.ageStage(), role.isFamily(), role.isSpouse());
@@ -61,6 +66,10 @@ public class SocialInteractPacket {
                         contacts.addOrUpdate(contact);
                     });
                 } else {
+                    if (narrative) {
+                        SocialContactHelper.remember(player, entity, data, role.isBaby(), role.isMinor(),
+                                role.ageStage(), role.isFamily(), role.isSpouse());
+                    }
                     SocialActionService.perform(player, entity, data, this.accion, role, SocialActionService.InteractionChannel.FACE_TO_FACE);
                     SocialContactHelper.remember(player, entity, data, role.isBaby(), role.isMinor(),
                             role.ageStage(), role.isFamily(), role.isSpouse());

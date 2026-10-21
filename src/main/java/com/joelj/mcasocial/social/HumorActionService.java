@@ -30,7 +30,7 @@ public final class HumorActionService {
 
         long now = System.currentTimeMillis();
         if (now < data.getLockoutTime()) {
-            sendResult(player, role.name(), "chat.mcasocial.global.bloqueado", 0, channel);
+            sendResult(player, role, "chat.mcasocial.global.bloqueado", 0, channel);
             return;
         }
 
@@ -69,19 +69,19 @@ public final class HumorActionService {
             data.setLockoutTime(now + LOCKOUT_MS);
             int points = -1;
             data.setAffinity(data.getAffinity() + points);
-            sendResult(player, role.name(), baseKey + "." + audienceKey + ".harto", points, channel);
+            sendResult(player, role, baseKey + "." + audienceKey + ".harto", points, channel);
             return;
         }
 
         if (spam && data.getSpamCount() >= neutralLimit) {
             String relationKey = relationLevel >= 3 ? "high" : "low";
-            sendResult(player, role.name(), baseKey + "." + audienceKey + ".warning." + relationKey, 0, channel);
+            sendResult(player, role, baseKey + "." + audienceKey + ".warning." + relationKey, 0, channel);
             return;
         }
 
         if (spam) {
             String relationKey = relationLevel >= 3 ? "high" : "low";
-            sendResult(player, role.name(), baseKey + "." + audienceKey + ".warning." + relationKey, 0, channel);
+            sendResult(player, role, baseKey + "." + audienceKey + ".warning." + relationKey, 0, channel);
             return;
         }
 
@@ -101,7 +101,7 @@ public final class HumorActionService {
                 ? baseKey + "." + audienceKey + ".success." + variant
                 : (variant == 1 ? baseKey + "." + audienceKey + ".fail"
                 : baseKey + "." + audienceKey + ".fail." + variant);
-        sendResult(player, role.name(), key, points, channel);
+        sendResult(player, role, key, points, channel);
         SocialDiscoveryService.recordInteraction(player, entity, data, action, role);
     }
 
@@ -207,10 +207,10 @@ public final class HumorActionService {
         return Math.floorMod(Objects.hash(player.getUUID(), targetUuid, action, sequence), variants) + 1;
     }
 
-    private static void sendResult(ServerPlayer player, String name, String key, int points,
+    private static void sendResult(ServerPlayer player, SocialActionService.RoleInfo role, String key, int points,
                                    SocialActionService.InteractionChannel channel) {
-        MutableComponent message = Component.literal(prefix(name, channel))
-                .append(Component.translatable(key))
+        MutableComponent message = Component.literal(prefix(role.name(), channel))
+                .append(SocialKinship.dialogue(player, role.uuid(), key))
                 .append(Component.literal(" " + pointText(points)));
         player.sendSystemMessage(message);
 

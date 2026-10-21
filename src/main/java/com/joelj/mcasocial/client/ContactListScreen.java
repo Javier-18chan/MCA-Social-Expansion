@@ -118,6 +118,7 @@ public class ContactListScreen extends Screen {
             case PHONE -> 61;
             case LETTER -> 68;
             case CRYSTAL -> 70;
+            case MAGIC_MIRROR -> 92;
         };
     }
 
@@ -126,6 +127,7 @@ public class ContactListScreen extends Screen {
             case PHONE -> 104;
             case LETTER -> 111;
             case CRYSTAL -> 113;
+            case MAGIC_MIRROR -> 133;
         };
     }
 
@@ -177,11 +179,11 @@ public class ContactListScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         guiGraphics.fill(0, 0, this.width, this.height, 0x90000000);
-        guiGraphics.blit(this.theme.background(), this.leftPos, this.topPos, 0, 0,
-                this.theme.imageWidth(), this.theme.imageHeight(), this.theme.textureSize(), this.theme.textureSize());
+        this.theme.drawBackground(guiGraphics, this.leftPos, this.topPos);
 
         int centerX = this.leftPos + this.theme.imageWidth() / 2;
-        int titleY = this.topPos + (this.theme == SocialInterfaceTheme.PHONE ? 20 : 23);
+        int titleY = this.topPos + (this.theme == SocialInterfaceTheme.PHONE ? 20
+                : this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 47 : 23);
         guiGraphics.drawCenteredString(this.font, Component.translatable(this.theme.homeTitleKey())
                         .append(" ").append(Component.translatable("gui.mcasocial.version")),
                 centerX, titleY, titleColor());
@@ -208,15 +210,18 @@ public class ContactListScreen extends Screen {
     }
 
     private int promptLineOneY() {
-        return this.theme == SocialInterfaceTheme.PHONE ? 32 : 37;
+        return this.theme == SocialInterfaceTheme.PHONE ? 32
+                : this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 59 : 37;
     }
 
     private int promptLineTwoY() {
-        return this.theme == SocialInterfaceTheme.PHONE ? 42 : 48;
+        return this.theme == SocialInterfaceTheme.PHONE ? 42
+                : this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 69 : 48;
     }
 
     private int countY() {
-        return this.theme == SocialInterfaceTheme.PHONE ? 52 : 59;
+        return this.theme == SocialInterfaceTheme.PHONE ? 52
+                : this.theme == SocialInterfaceTheme.MAGIC_MIRROR ? 80 : 59;
     }
 
     private int titleColor() {
@@ -373,17 +378,20 @@ public class ContactListScreen extends Screen {
             boolean hovered = mouseX >= this.getX() && mouseY >= this.getY()
                     && mouseX < this.getX() + this.width && mouseY < this.getY() + this.height;
             guiGraphics.blit(ContactListScreen.this.theme.menuButtons(), this.getX(), this.getY(),
-                    0, hovered ? 32 : 0, this.width, this.height, 256, 256);
+                    this.width, this.height, 0.0F, hovered ? 32.0F : 0.0F, 117, 30, 256, 256);
 
-            drawFittedName(guiGraphics, this.getMessage(), this.getX() + this.width / 2, this.getY() + 5,
+            ContactPortrait.renderEmbedded(guiGraphics, this.contact.getUuid(),
+                    this.getX() + 1, this.getY() + 1, 28, ContactListScreen.this.theme);
+            int textCenter = this.getX() + 29 + (this.width - 29) / 2;
+            drawFittedName(guiGraphics, this.getMessage(), textCenter, this.getY() + 5,
                     hovered ? ContactListScreen.this.theme.accentColor() : ContactListScreen.this.textColor());
-            drawMetrics(guiGraphics);
+            drawMetrics(guiGraphics, textCenter);
         }
 
         private void drawFittedName(GuiGraphics guiGraphics, Component text, int centerX, int y, int color) {
             var font = Minecraft.getInstance().font;
             int textWidth = font.width(text);
-            float scale = textWidth <= this.width - 8 ? 1.0F : Math.max(0.75F, (this.width - 8.0F) / textWidth);
+            float scale = textWidth <= this.width - 33 ? 1.0F : Math.min(1.0F, (this.width - 33.0F) / textWidth);
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(centerX, y, 0);
             guiGraphics.pose().scale(scale, scale, 1.0F);
@@ -391,7 +399,7 @@ public class ContactListScreen extends Screen {
             guiGraphics.pose().popPose();
         }
 
-        private void drawMetrics(GuiGraphics guiGraphics) {
+        private void drawMetrics(GuiGraphics guiGraphics, int textCenter) {
             boolean trustContact = (this.contact.isFamily() || this.contact.isBaby() || this.contact.isMinor())
                     && !this.contact.isSpouse();
             List<MetricSegment> segments = new ArrayList<>();
@@ -409,9 +417,9 @@ public class ContactListScreen extends Screen {
                 if (i > 0) totalWidth += spacing;
             }
 
-            float scale = totalWidth <= this.width - 8 ? 1.0F : Math.max(0.68F, (this.width - 8.0F) / totalWidth);
+            float scale = totalWidth <= this.width - 33 ? 1.0F : Math.min(1.0F, (this.width - 33.0F) / totalWidth);
             guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(this.getX() + this.width / 2.0F, this.getY() + 17, 0);
+            guiGraphics.pose().translate(textCenter, this.getY() + 17, 0);
             guiGraphics.pose().scale(scale, scale, 1.0F);
 
             int x = -totalWidth / 2;

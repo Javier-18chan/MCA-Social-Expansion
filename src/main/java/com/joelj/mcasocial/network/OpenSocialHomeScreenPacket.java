@@ -13,27 +13,36 @@ public class OpenSocialHomeScreenPacket {
     public final int interfaceType;
     public final DeliveryDelayMode delayMode;
     public final int pendingCount;
+    public final boolean spontaneousEnabled;
 
     public OpenSocialHomeScreenPacket(int interfaceType) {
-        this(interfaceType, DeliveryDelayMode.SHORT, 0);
+        this(interfaceType, DeliveryDelayMode.SHORT, 0, true);
     }
 
     public OpenSocialHomeScreenPacket(int interfaceType, DeliveryDelayMode delayMode, int pendingCount) {
+        this(interfaceType, delayMode, pendingCount, true);
+    }
+
+    public OpenSocialHomeScreenPacket(int interfaceType, DeliveryDelayMode delayMode, int pendingCount,
+                                      boolean spontaneousEnabled) {
         this.interfaceType = SocialInterfaceType.normalize(interfaceType);
         this.delayMode = delayMode == null ? DeliveryDelayMode.SHORT : delayMode;
         this.pendingCount = Math.max(0, pendingCount);
+        this.spontaneousEnabled = spontaneousEnabled;
     }
 
     public OpenSocialHomeScreenPacket(FriendlyByteBuf buf) {
         this.interfaceType = SocialInterfaceType.normalize(buf.readInt());
         this.delayMode = DeliveryDelayMode.fromOrdinal(buf.readInt());
         this.pendingCount = Math.max(0, buf.readInt());
+        this.spontaneousEnabled = buf.readBoolean();
     }
 
     public void toBytes(FriendlyByteBuf buf) {
         buf.writeInt(this.interfaceType);
         buf.writeInt(this.delayMode.ordinal());
         buf.writeInt(this.pendingCount);
+        buf.writeBoolean(this.spontaneousEnabled);
     }
 
     public boolean handle(Supplier<NetworkEvent.Context> supplier) {

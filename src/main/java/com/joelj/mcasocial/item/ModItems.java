@@ -20,6 +20,9 @@ public class ModItems {
     public static final RegistryObject<Item> CRYSTAL = ITEMS.register("crystal",
             () -> new Item(new Item.Properties().stacksTo(1)));
 
+    public static final RegistryObject<Item> MAGIC_MIRROR = ITEMS.register("magic_mirror",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);
     }

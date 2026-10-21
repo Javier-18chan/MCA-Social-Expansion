@@ -13,14 +13,21 @@ public final class DelayedSocialActionService {
         ISocialContacts contacts = player.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).orElse(null);
         if (contacts == null) return;
 
-        int delayTicks = contacts.getDeliveryDelayMode().delayTicks(interfaceType);
-        if (delayTicks <= 0) {
-            ContactInteractionService.perform(player, contactUuid, action, interfaceType);
+        if (DeceasedVillagers.get(player.server).contains(contactUuid)) {
+            contacts.removeContact(contactUuid);
+            player.displayClientMessage(Component.translatable("chat.mcasocial.contacts.deceased"), true);
             return;
         }
 
         SocialContact contact = contacts.getContact(contactUuid);
         if (contact == null) return;
+
+        int delayTicks = contacts.getDeliveryDelayMode().delayTicks(interfaceType);
+        if (delayTicks <= 0) {
+            SocialInterfaceSounds.playSent(player, interfaceType);
+            ContactInteractionService.perform(player, contactUuid, action, interfaceType);
+            return;
+        }
 
         long deliveryTime = player.level().getGameTime() + delayTicks;
         PendingSocialAction pending = new PendingSocialAction(contactUuid, action, interfaceType, deliveryTime);
@@ -39,6 +46,7 @@ public final class DelayedSocialActionService {
         ISocialContacts contacts = player.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).orElse(null);
         if (contacts == null) return;
 
+        ContactRosterService.purgeDeceased(player, contacts);
         List<PendingSocialAction> due = contacts.removeDueActions(player.level().getGameTime());
         for (PendingSocialAction action : due) {
             if (!SocialActionService.isValidAction(action.action())) continue;

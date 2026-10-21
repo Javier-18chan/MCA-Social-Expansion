@@ -28,6 +28,9 @@ public class SocialContact implements ISocialData {
     private long lockoutTime;
     private long lastSeenGameTime;
     private boolean pendingSync;
+    private long lastSpontaneousDay = -1L;
+    private int lastSpontaneousVariant;
+    private final SocialMemory socialMemory = new SocialMemory();
     private int knowledgeLevel;
     private String favoriteGiftCategory = "";
     private String likedGiftCategory = "";
@@ -46,6 +49,9 @@ public class SocialContact implements ISocialData {
 
     public UUID getUuid() { return uuid; }
     public String getName() { return name; }
+    public void refreshName(String currentName) {
+        if (currentName != null && !currentName.isBlank()) this.name = currentName;
+    }
     public boolean isBaby() { return baby; }
     public boolean isMinor() { return minor; }
     public SocialAgeStage getAgeStage() { return ageStage; }
@@ -54,6 +60,13 @@ public class SocialContact implements ISocialData {
     public boolean isFavorite() { return favorite; }
     public long getLastSeenGameTime() { return lastSeenGameTime; }
     public boolean isPendingSync() { return pendingSync; }
+    public long getLastSpontaneousDay() { return lastSpontaneousDay; }
+    public int getLastSpontaneousVariant() { return lastSpontaneousVariant; }
+    public SocialMemory getSocialMemory() { return socialMemory; }
+    public void recordSpontaneousMessage(long day, int variant) {
+        this.lastSpontaneousDay = day;
+        this.lastSpontaneousVariant = variant;
+    }
     public int getKnowledgeLevel() { return knowledgeLevel; }
     public String getFavoriteGiftCategory() { return favoriteGiftCategory; }
     public String getLikedGiftCategory() { return likedGiftCategory; }
@@ -162,6 +175,9 @@ public class SocialContact implements ISocialData {
         tag.putLong("LockoutTime", lockoutTime);
         tag.putLong("LastSeenGameTime", lastSeenGameTime);
         tag.putBoolean("PendingSync", pendingSync);
+        tag.putLong("LastSpontaneousDay", lastSpontaneousDay);
+        tag.putInt("LastSpontaneousVariant", lastSpontaneousVariant);
+        tag.put("SocialMemory", socialMemory.save());
         tag.putInt("KnowledgeLevel", knowledgeLevel);
         tag.putString("FavoriteGiftCategory", favoriteGiftCategory);
         tag.putString("LikedGiftCategory", likedGiftCategory);
@@ -201,6 +217,9 @@ public class SocialContact implements ISocialData {
         contact.lockoutTime = tag.getLong("LockoutTime");
         contact.lastSeenGameTime = tag.getLong("LastSeenGameTime");
         contact.pendingSync = tag.getBoolean("PendingSync");
+        contact.lastSpontaneousDay = tag.contains("LastSpontaneousDay") ? tag.getLong("LastSpontaneousDay") : -1L;
+        contact.lastSpontaneousVariant = tag.getInt("LastSpontaneousVariant");
+        contact.socialMemory.load(tag.getCompound("SocialMemory"));
         contact.knowledgeLevel = Math.max(0, Math.min(4, tag.getInt("KnowledgeLevel")));
         contact.favoriteGiftCategory = tag.getString("FavoriteGiftCategory");
         contact.likedGiftCategory = tag.getString("LikedGiftCategory");
@@ -234,6 +253,9 @@ public class SocialContact implements ISocialData {
         copy.lockoutTime = lockoutTime;
         copy.lastSeenGameTime = lastSeenGameTime;
         copy.pendingSync = pendingSync;
+        copy.lastSpontaneousDay = lastSpontaneousDay;
+        copy.lastSpontaneousVariant = lastSpontaneousVariant;
+        copy.socialMemory.copyFrom(socialMemory);
         copy.knowledgeLevel = knowledgeLevel;
         copy.favoriteGiftCategory = favoriteGiftCategory;
         copy.likedGiftCategory = likedGiftCategory;

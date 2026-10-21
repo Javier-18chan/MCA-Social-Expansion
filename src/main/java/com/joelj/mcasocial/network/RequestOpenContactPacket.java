@@ -7,9 +7,11 @@ import com.joelj.mcasocial.social.SocialActionService;
 import com.joelj.mcasocial.social.SocialCapability;
 import com.joelj.mcasocial.social.McaRomanceSync;
 import com.joelj.mcasocial.social.GiftPreferenceProfile;
+import com.joelj.mcasocial.social.ContactRosterService;
+import com.joelj.mcasocial.social.DeceasedVillagers;
 import forge.net.conczin.mca.entity.VillagerEntityMCA;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkEvent;
@@ -43,10 +45,16 @@ public class RequestOpenContactPacket {
             if (player == null || !RequestContactsPacket.hasSocialDevice(player)) return;
 
             player.getCapability(SocialContactsCapability.SOCIAL_CONTACTS).ifPresent(contacts -> {
+                if (DeceasedVillagers.get(player.server).contains(this.contactUuid)) {
+                    contacts.removeContact(this.contactUuid);
+                    player.displayClientMessage(Component.translatable("chat.mcasocial.contacts.deceased"), true);
+                    ModMessages.sendToPlayer(new OpenContactsScreenPacket(contacts.getContacts(), this.interfaceType), player);
+                    return;
+                }
                 SocialContact contact = contacts.getContact(this.contactUuid);
                 if (contact == null) return;
 
-                Entity loadedEntity = ((ServerLevel) player.level()).getEntity(this.contactUuid);
+                Entity loadedEntity = ContactRosterService.findLoaded(player.server, this.contactUuid);
                 if (loadedEntity != null) {
                     loadedEntity.getCapability(SocialCapability.SOCIAL_CAPABILITY).ifPresent(data -> {
                         if (loadedEntity instanceof VillagerEntityMCA villager) {

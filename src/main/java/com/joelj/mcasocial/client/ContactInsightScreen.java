@@ -31,10 +31,12 @@ public class ContactInsightScreen extends Screen {
         super.init();
         leftPos = (width - theme.imageWidth()) / 2;
         topPos = (height - theme.imageHeight()) / 2;
-        int buttonWidth = 117;
+        int buttonWidth = theme.menuButtonWidth();
         int startX = leftPos + (theme.imageWidth() - buttonWidth) / 2;
         addRenderableWidget(new SocialMenuButton(
-                startX, topPos + theme.imageHeight() - 65, buttonWidth, 30, theme.menuButtons(),
+                startX, topPos + theme.imageHeight()
+                        - (theme == SocialInterfaceTheme.MAGIC_MIRROR ? 92 : 65),
+                buttonWidth, 30, theme.menuButtons(),
                 Component.translatable("gui.mcasocial.back"),
                 button -> Minecraft.getInstance().setScreen(previousScreen)
         ));
@@ -46,31 +48,32 @@ public class ContactInsightScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         guiGraphics.fill(0, 0, width, height, 0x90000000);
-        guiGraphics.blit(theme.background(), leftPos, topPos, 0, 0,
-                theme.imageWidth(), theme.imageHeight(), theme.textureSize(), theme.textureSize());
+        theme.drawBackground(guiGraphics, leftPos, topPos);
         int centerX = leftPos + theme.imageWidth() / 2;
+        int contentY = theme == SocialInterfaceTheme.MAGIC_MIRROR ? 28 : theme.panelOffset();
         int knowledge = ClientSocialProfile.knowledgeLevel();
 
         guiGraphics.drawCenteredString(font, Component.translatable("gui.mcasocial.discovery.title"),
-                centerX, topPos + 25, theme.titleColor());
-        guiGraphics.drawCenteredString(font, contactName, centerX, topPos + 38, theme.accentColor());
+                centerX, topPos + 25 + contentY, theme.titleColor());
+        guiGraphics.drawCenteredString(font, contactName, centerX,
+                topPos + 38 + contentY, theme.accentColor());
         drawLine(guiGraphics, Component.translatable("gui.mcasocial.discovery.stage")
                 .append(Component.literal(": "))
-                .append(Component.translatable("gui.mcasocial.discovery.stage." + knowledge)), centerX, topPos + 58, theme.textColor());
+                .append(Component.translatable("gui.mcasocial.discovery.stage." + knowledge)), centerX, topPos + 58 + contentY, theme.textColor());
         drawLine(guiGraphics, Component.translatable("gui.mcasocial.personality")
                 .append(Component.literal(": "))
-                .append(ClientSocialProfile.personalityDisplay(personality)), centerX, topPos + 75, 0x55CCFF);
+                .append(ClientSocialProfile.personalityDisplay(personality)), centerX, topPos + 75 + contentY, 0x55CCFF);
         drawLine(guiGraphics, Component.translatable("gui.mcasocial.discovery.life_stage")
                 .append(Component.literal(": "))
                 .append(Component.translatable("gui.mcasocial.discovery.life_stage." + lifeStageKey())),
-                centerX, topPos + 91, theme.mutedColor());
+                centerX, topPos + 91 + contentY, theme.mutedColor());
 
         drawPreference(guiGraphics, "favorite", ClientSocialProfile.favoriteGiftCategory(), knowledge >= 2,
-                centerX, topPos + 119, 0xFF77C8);
+                centerX, topPos + (theme == SocialInterfaceTheme.MAGIC_MIRROR ? 114 : 119) + contentY, 0xFF77C8);
         drawPreference(guiGraphics, "liked", ClientSocialProfile.likedGiftCategory(), knowledge >= 3,
-                centerX, topPos + 139, 0x55FF55);
+                centerX, topPos + (theme == SocialInterfaceTheme.MAGIC_MIRROR ? 132 : 139) + contentY, 0x55FF55);
         drawPreference(guiGraphics, "disliked", ClientSocialProfile.dislikedGiftCategory(), knowledge >= 4,
-                centerX, topPos + 159, 0xFF7777);
+                centerX, topPos + (theme == SocialInterfaceTheme.MAGIC_MIRROR ? 150 : 159) + contentY, 0xFF7777);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
 

@@ -10,17 +10,21 @@ import java.util.function.Supplier;
 
 public class UpdateSocialSettingsPacket {
     private final DeliveryDelayMode delayMode;
+    private final boolean spontaneousEnabled;
 
-    public UpdateSocialSettingsPacket(DeliveryDelayMode delayMode) {
+    public UpdateSocialSettingsPacket(DeliveryDelayMode delayMode, boolean spontaneousEnabled) {
         this.delayMode = delayMode == null ? DeliveryDelayMode.SHORT : delayMode;
+        this.spontaneousEnabled = spontaneousEnabled;
     }
 
     public UpdateSocialSettingsPacket(FriendlyByteBuf buf) {
         this.delayMode = DeliveryDelayMode.fromOrdinal(buf.readInt());
+        this.spontaneousEnabled = buf.readBoolean();
     }
 
     public void toBytes(FriendlyByteBuf buf) {
         buf.writeInt(delayMode.ordinal());
+        buf.writeBoolean(spontaneousEnabled);
     }
 
     public boolean handle(Supplier<NetworkEvent.Context> supplier) {
@@ -29,7 +33,10 @@ public class UpdateSocialSettingsPacket {
             ServerPlayer player = context.getSender();
             if (player == null) return;
             player.getCapability(SocialContactsCapability.SOCIAL_CONTACTS)
-                    .ifPresent(contacts -> contacts.setDeliveryDelayMode(delayMode));
+                    .ifPresent(contacts -> {
+                        contacts.setDeliveryDelayMode(delayMode);
+                        contacts.setSpontaneousEnabled(spontaneousEnabled);
+                    });
         });
         context.setPacketHandled(true);
         return true;

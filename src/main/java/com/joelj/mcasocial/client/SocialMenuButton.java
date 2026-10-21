@@ -26,7 +26,8 @@ public class SocialMenuButton extends Button {
     @Override
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         int texY = this.active ? (this.isHoveredOrFocused() ? 32 : 0) : 64;
-        guiGraphics.blit(this.texture, this.getX(), this.getY(), 0, texY, this.width, this.height, 256, 256);
+        guiGraphics.blit(this.texture, this.getX(), this.getY(), this.width, this.height,
+                0.0F, texY, 117, 30, 256, 256);
         int color = this.active ? (this.isHoveredOrFocused() ? 0xFFFF55 : 0xFFFFFF) : 0xAAAAAA;
         int centerX = this.getX() + this.width / 2;
         if (this.subtitle == null) {
@@ -42,7 +43,8 @@ public class SocialMenuButton extends Button {
     private void drawFittedText(GuiGraphics guiGraphics, Component text, int centerX, int y, int color) {
         var font = Minecraft.getInstance().font;
         int textWidth = font.width(text);
-        float scale = textWidth <= this.width - 8 ? 1.0F : Math.max(0.75F, (this.width - 8.0F) / textWidth);
+        int inset = this.width > 120 ? 30 : 8;
+        float scale = Math.min(1.0F, (this.width - inset) / (float) Math.max(1, textWidth));
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(centerX, y, 0);
         guiGraphics.pose().scale(scale, scale, 1.0F);

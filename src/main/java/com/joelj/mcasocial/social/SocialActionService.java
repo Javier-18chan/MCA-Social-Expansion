@@ -11,15 +11,15 @@ import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class SocialActionService {
     private static final Set<String> VALID_ACTIONS = Set.of(
-            "saludar", "bromear", "elogiar", "insultar", "coquetear",
+            "saludar", "bromear", "elogiar", "coquetear",
             "amistad_saludar", "preguntar_dia", "chismear", "contar_anecdota", "dar_apoyo",
-            "recordar_votos", "hablar_hogar", "planear_juntos",
-            "criticar", "confrontar", "provocar", "disculparse"
+            "recordar_votos", "hablar_hogar", "planear_juntos"
     );
 
     private SocialActionService() {}
@@ -27,6 +27,7 @@ public class SocialActionService {
     public static boolean isValidAction(String action) {
         return VALID_ACTIONS.contains(action)
                 || SocialDiscoveryService.isDiscoveryAction(action)
+                || SocialNarrativeService.isNarrativeAction(action)
                 || RelationshipActionService.isRelationshipAction(action)
                 || HumorActionService.isHumorAction(action);
     }
@@ -98,7 +99,10 @@ public class SocialActionService {
             }
         }
 
-        return new RoleInfo(entity.getName().getString(), isBaby, isMinor, family && !spouse, spouse, ageStage);
+        if (player instanceof ServerPlayer serverPlayer && SocialKinship.generation(serverPlayer, entity.getUUID()) > 0) {
+            family = true;
+        }
+        return new RoleInfo(entity.getName().getString(), isBaby, isMinor, family && !spouse, spouse, ageStage, entity.getUUID());
     }
 
     private static boolean isParentDialogue(String dialogueType) {
@@ -113,6 +117,10 @@ public class SocialActionService {
     public static void perform(ServerPlayer player, @Nullable Entity entity, ISocialData data,
                                String action, RoleInfo role, InteractionChannel channel) {
         if (!isValidAction(action)) return;
+        if (SocialNarrativeService.isNarrativeAction(action)) {
+            SocialNarrativeService.perform(player, entity, data, action, role, channel);
+            return;
+        }
         if (RelationshipActionService.isRelationshipAction(action)) {
             RelationshipActionService.perform(player, entity, data, action, role, channel);
             return;
@@ -134,7 +142,7 @@ public class SocialActionService {
         long tiempoTranscurrido = tiempoActual - data.getLastActionTime(action);
 
         if (tiempoActual < data.getLockoutTime()) {
-            MutableComponent mensajeChat = Component.literal(prefix(nombre, channel))
+            MutableComponent mensajeChat = Component.literal(prefix(role.name(), channel))
                     .append(Component.translatable(role.isBaby() ? "chat.mcasocial.bebe.insulto" : "chat.mcasocial.global.bloqueado"))
                     .append(Component.literal(" \u00a7e(+0)"));
             player.sendSystemMessage(mensajeChat);
@@ -236,7 +244,7 @@ public class SocialActionService {
                 puntosGanados = outcome.points();
                 llaveDialogo = outcome.dialogueKey();
 
-                if (!esAmistadExtra && !isConflictAction(action)) {
+                if (!esAmistadExtra) {
                     llaveDialogo = applyFamilyOverrides(action, palabraClave, role, esSpam, puntosGanados, llaveDialogo, player);
                 }
             }
@@ -252,11 +260,11 @@ public class SocialActionService {
             }
         }
 
-        applyPoints(player, entity, data, action, puntosGanados, esRomance, ejecutarAccionNormal);
+        applyPoints(player, entity, data, puntosGanados, esRomance);
         if (ejecutarAccionNormal) {
             SocialDiscoveryService.recordInteraction(player, entity, data, action, role);
         }
-        sendResult(player, nombre, llaveDialogo, puntosGanados, esRomance || action.equals("insultar"), channel);
+        sendResult(player, role, llaveDialogo, puntosGanados, esRomance, channel);
     }
 
     private static ActionOutcome calculateOutcome(String action, String p, double dado, ThreadLocalRandom random,
@@ -268,9 +276,6 @@ public class SocialActionService {
             }
             case "bromear" -> jokeOutcome(p, dado, random);
             case "elogiar" -> praiseOutcome(p, dado, random);
-            case "insultar" -> insultOutcome(p, dado, random);
-            case "criticar", "confrontar", "provocar", "disculparse" ->
-                    conflictOutcome(action, p, random, data, role);
             case "coquetear" -> flirtOutcome(p, dado, random, data);
             case "amistad_saludar" -> friendshipOutcome("saludo", p, random, data, role, channel, 2, player);
             case "preguntar_dia" -> friendshipOutcome("preguntar_dia", p, random, data, role, channel,
@@ -312,44 +317,6 @@ public class SocialActionService {
 
         if (dado < probElogio) return new ActionOutcome(ptsBienElogio, "chat.mcasocial.elogio." + p + ".bien." + random.nextInt(1, 4));
         return new ActionOutcome(ptsMalElogio, "chat.mcasocial.elogio." + p + ".mal." + random.nextInt(1, 3));
-    }
-
-    private static ActionOutcome insultOutcome(String p, double dado, ThreadLocalRandom random) {
-        double probInsulto = 0.70;
-        int ptsBienInsulto = -5;
-        int ptsMalInsulto = -2;
-        if (p.equals("leal")) { probInsulto = 1.0; ptsBienInsulto = -4; ptsMalInsulto = -4; }
-        else if (p.equals("orgulloso")) { probInsulto = 0.50; ptsBienInsulto = -6; ptsMalInsulto = -1; }
-        else if (p.equals("sarcastico")) { probInsulto = 0.30; ptsBienInsulto = -3; ptsMalInsulto = 0; }
-
-        if (dado < probInsulto) return new ActionOutcome(ptsBienInsulto, "chat.mcasocial.insulto." + p + ".bien." + random.nextInt(1, 4));
-        return new ActionOutcome(ptsMalInsulto, "chat.mcasocial.insulto." + p + ".mal." + random.nextInt(1, 3));
-    }
-
-    private static ActionOutcome conflictOutcome(String action, String personality, ThreadLocalRandom random,
-                                                 ISocialData data, RoleInfo role) {
-        int variant = random.nextInt(1, 3);
-        int points = switch (action) {
-            case "criticar" -> personality.equals("orgulloso") ? -3 : -1;
-            case "confrontar" -> personality.equals("leal") ? 0 : -2;
-            case "provocar" -> personality.equals("sarcastico") ? -2 : -4;
-            case "disculparse" -> data.getAffinity() < 0 ? 4 : 2;
-            default -> 0;
-        };
-
-        if (action.equals("confrontar")) {
-            data.setTrust(data.getTrust() + (personality.equals("leal") ? 1 : -1));
-        } else if (action.equals("disculparse")) {
-            data.setTrust(data.getTrust() + 1);
-        }
-
-        String stage = switch (role.ageStage()) {
-            case BABY, CHILD -> "child";
-            case TEEN -> "teen";
-            default -> "adult";
-        };
-        String key = "chat.mcasocial.conflict." + action + "." + stage + "." + variant;
-        return new ActionOutcome(points, key);
     }
 
     private static ActionOutcome flirtOutcome(String p, double dado, ThreadLocalRandom random, ISocialData data) {
@@ -430,20 +397,17 @@ public class SocialActionService {
         return llaveDialogo;
     }
 
-    private static void applyPoints(ServerPlayer player, @Nullable Entity entity, ISocialData data, String action,
-                                    int puntosGanados, boolean esRomance, boolean ejecutarAccionNormal) {
+    private static void applyPoints(ServerPlayer player, @Nullable Entity entity, ISocialData data,
+                                    int puntosGanados, boolean esRomance) {
         if (esRomance) {
             updateMcaHearts(player, entity, data, puntosGanados);
             return;
         }
 
         data.setAffinity(data.getAffinity() + puntosGanados);
-        if (action.equals("insultar") && ejecutarAccionNormal) {
-            updateMcaHearts(player, entity, data, puntosGanados);
-        }
     }
 
-    private static void updateMcaHearts(ServerPlayer player, @Nullable Entity entity, ISocialData data, int puntosGanados) {
+    static void updateMcaHearts(ServerPlayer player, @Nullable Entity entity, ISocialData data, int puntosGanados) {
         int romanceActual = data.getRomance();
         int nuevosCorazones = romanceActual + puntosGanados;
         data.setRomance(nuevosCorazones);
@@ -457,7 +421,7 @@ public class SocialActionService {
         }
     }
 
-    private static void sendResult(ServerPlayer player, String nombre, String key, int points,
+    static void sendResult(ServerPlayer player, RoleInfo role, String key, int points,
                                    boolean romanceStyle, InteractionChannel channel) {
         float tono = points > 0 ? 1.5F : (points == 0 ? 0.9F : 0.5F);
         String colorSuma;
@@ -470,8 +434,8 @@ public class SocialActionService {
         Component dialogue = key.equals("chat.mcasocial.amistad.saludo.saliente.3")
                 || key.equals("chat.mcasocial.amistad.saludo.pareja")
                 ? Component.translatable(key, player.getDisplayName())
-                : Component.translatable(key);
-        MutableComponent mensajeChat = Component.literal(prefix(nombre, channel))
+                : SocialKinship.dialogue(player, role.uuid(), key);
+        MutableComponent mensajeChat = Component.literal(prefix(role.name(), channel))
                 .append(dialogue)
                 .append(Component.literal(" " + colorSuma));
 
@@ -500,9 +464,6 @@ public class SocialActionService {
             case "saludar" -> 7 * 60 * 1000L;
             case "bromear" -> 2 * 60 * 1000L;
             case "elogiar" -> 5 * 60 * 1000L;
-            case "insultar" -> 20 * 1000L;
-            case "criticar", "confrontar", "provocar" -> 45 * 1000L;
-            case "disculparse" -> 2 * 60 * 1000L;
             case "coquetear" -> 5 * 60 * 1000L;
             case "amistad_saludar" -> 5 * 60 * 1000L;
             case "preguntar_dia" -> 4 * 60 * 1000L;
@@ -528,7 +489,7 @@ public class SocialActionService {
     private static double personalityCooldownMultiplier(String action, String personality) {
         return switch (personality) {
             case "extrovertido" -> 0.65;
-            case "timido" -> action.equals("insultar") ? 1.10 : 1.35;
+            case "timido" -> 1.35;
             case "ambicioso" -> action.equals("preguntar_dia") || action.equals("chismear") ? 0.95 : 1.05;
             case "chismoso" -> action.equals("chismear") || action.equals("preguntar_dia") || action.equals("amistad_saludar") ? 0.70 : 0.90;
             case "orgulloso" -> action.equals("elogiar") ? 0.95 : 1.15;
@@ -591,11 +552,6 @@ public class SocialActionService {
             case "saludar" -> "saludo";
             case "bromear" -> "broma";
             case "elogiar" -> "elogio";
-            case "insultar" -> "insulto";
-            case "criticar" -> "conflict.criticar";
-            case "confrontar" -> "conflict.confrontar";
-            case "provocar" -> "conflict.provocar";
-            case "disculparse" -> "conflict.disculparse";
             case "amistad_saludar" -> "amistad.saludo";
             case "preguntar_dia" -> "amistad.preguntar_dia";
             case "chismear" -> "amistad.chismear";
@@ -618,11 +574,6 @@ public class SocialActionService {
         if (lower.contains("sarcastico") || lower.contains("sarc\u00e1stico")) return "sarcastico";
         if (lower.contains("romantico") || lower.contains("rom\u00e1ntico")) return "romantico";
         return "normal";
-    }
-
-    private static boolean isConflictAction(String action) {
-        return action.equals("criticar") || action.equals("confrontar")
-                || action.equals("provocar") || action.equals("disculparse");
     }
 
     private static String detectPlayerParentSuffix(ServerPlayer player) {
@@ -654,14 +605,19 @@ public class SocialActionService {
         public static InteractionChannel fromInterfaceType(int interfaceType) {
             return switch (SocialInterfaceType.normalize(interfaceType)) {
                 case SocialInterfaceType.LETTER -> LETTER;
-                case SocialInterfaceType.CRYSTAL -> CRYSTAL;
+                case SocialInterfaceType.CRYSTAL, SocialInterfaceType.MAGIC_MIRROR -> CRYSTAL;
                 default -> PHONE;
             };
         }
     }
 
     public record RoleInfo(String name, boolean isBaby, boolean isMinor, boolean isFamily, boolean isSpouse,
-                           SocialAgeStage ageStage) {
+                           SocialAgeStage ageStage, UUID uuid) {
+        public RoleInfo(String name, boolean isBaby, boolean isMinor, boolean isFamily, boolean isSpouse,
+                        SocialAgeStage ageStage) {
+            this(name, isBaby, isMinor, isFamily, isSpouse, ageStage, null);
+        }
+
         public RoleInfo(String name, boolean isBaby, boolean isMinor, boolean isFamily, boolean isSpouse) {
             this(name, isBaby, isMinor, isFamily, isSpouse, SocialAgeStage.fromFlags(isBaby, isMinor));
         }
