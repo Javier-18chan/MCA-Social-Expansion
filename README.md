@@ -1,70 +1,70 @@
 # MCA Social Expansion
 
-MCA Social Expansion amplía MCA Reborn con relaciones más dinámicas, comunicación a distancia, descubrimiento progresivo de NPC, regalos contextuales e interacciones sociales con memoria.
+MCA Social Expansion extends MCA Reborn with more dynamic relationships, remote communication, gradual discovery of NPC personalities and preferences, contextual gifts, and social interactions that remember past encounters.
 
-## Versión 0.9.2
+## Version 0.9.2
 
-- Los NPC revividos pueden volver a registrarse al interactuar con ellos usando un objeto social.
-- Los diálogos distinguen entre hijos, nietos y bisnietos y respetan el género elegido por el jugador.
-- Nuevos mensajes espontáneos para nietos y bisnietos según su etapa de vida.
-- Retratos persistentes con lectura y guardado en segundo plano y sin búsquedas continuas de contactos lejanos.
-- Protección frente a interacciones con NPC fallecidos desde interfaces que seguían abiertas.
+- Revived NPCs can be added to contacts again by interacting with them while holding a social item.
+- Dialogue distinguishes between children, grandchildren, and great-grandchildren and respects the player's selected gender.
+- New spontaneous messages for grandchildren and great-grandchildren, tailored to their life stage.
+- Persistent portraits with background loading and saving, without repeatedly searching for distant contacts.
+- Prevents interactions with deceased NPCs through interfaces that remained open.
 
-Consulta [CHANGELOG.md](CHANGELOG.md) para ver los cambios de esta versión.
+See [CHANGELOG.md](CHANGELOG.md) for the release history.
 
-## Funciones
+## Features
 
-- Descubrimiento progresivo de personalidad y preferencias.
-- Sistema híbrido de regalos con categorías, calidad, favoritos, gustos y rechazos.
-- Compatibilidad controlada con objetos de otros mods y filtrado de regalos inválidos.
-- Celular, carta, cristal y espejo mágico con retratos de los contactos.
-- Bandeja de mensajes y tiempos de entrega configurables.
-- Mensajes espontáneos de NPC según su relación, con respuestas y contextos del Nether y el End.
-- Sonidos propios para cada interfaz de comunicación.
-- Conversaciones por temas, insultos, disculpas y reconciliación, con memoria de interacciones recientes.
-- Mejoras visuales y correcciones de distribución en las interfaces.
+- Gradual discovery of NPC personalities and preferences.
+- A hybrid gift system with categories, item quality, favorites, likes, and dislikes.
+- Controlled support for items from other mods, with invalid gifts filtered out.
+- Smartphone, letter, crystal, and magic mirror interfaces with contact portraits.
+- A message inbox and configurable delivery times.
+- Spontaneous NPC messages based on your relationship, with replies and Nether and End contexts.
+- Custom sounds for each communication interface.
+- Topic-based conversations, insults, apologies, and reconciliation, with memory of recent interactions.
+- Visual improvements and interface layout fixes.
 
-## Compatibilidad
+## Compatibility
 
 - Minecraft 1.20.1.
-- Forge 47 o posterior.
+- Forge 47 or later.
 - Java 17.
 
-Este repositorio contiene exclusivamente el código fuente de Forge 1.20.1. El JAR oficial de esta versión se encuentra en la sección Releases.
+This repository contains only the Forge 1.20.1 source code. The official JAR for this version is available in the Releases section.
 
-## Dependencias
+## Dependencies
 
-MCA Reborn es la única dependencia obligatoria. Este proyecto utiliza MCA Reborn 7.7.1-alpha.1 o posterior en Minecraft 1.20.1.
+MCA Reborn is the only required mod dependency. This project targets MCA Reborn 7.7.1-alpha.1 or later on Minecraft 1.20.1.
 
-Integraciones opcionales:
+Optional integrations:
 
-- MCA Quests 1.1.0 o posterior.
-- MCA Conversations 1.0.0 o posterior.
-- Townstead 0.7.6 o posterior.
+- MCA Quests 1.1.0 or later.
+- MCA Conversations 1.0.0 or later.
+- Townstead 0.7.6 or later.
 
-## Compilación
+## Building
 
-Coloca estas dependencias de compilación en `libs/`:
+Place these build dependencies in `libs/`:
 
 - `minecraft-comes-alive-7.7.1-alpha.1+1.20.1-universal.jar`
 - `architectury-9.2.14-forge.jar`
 
-Después ejecuta:
+Then run:
 
 ```powershell
 .\gradlew.bat build
 ```
 
-El JAR compilado se genera en `build/libs/`. La compilación también ejecuta las pruebas de parentesco, incluidas las generaciones posteriores y los árboles familiares con ciclos.
+The compiled JAR is generated in `build/libs/`. The build also runs family relationship regression tests, including later generations and family trees containing cycles.
 
-## Idiomas
+## Languages
 
-El mod incluye traducciones para inglés de Estados Unidos, español de España, español de México, español de Estados Unidos y portugués de Brasil.
+The mod includes translations for US English, Spanish from Spain, Mexican Spanish, US Spanish, and Brazilian Portuguese.
 
-## Autor
+## Author
 
 _XavierCodes_
 
-## Licencia
+## License
 
-GNU General Public License v3.0 only (`GPL-3.0-only`). Consulta el archivo `LICENSE` para leer los términos completos.
+GNU General Public License v3.0 only (`GPL-3.0-only`). See `LICENSE` for the full terms.

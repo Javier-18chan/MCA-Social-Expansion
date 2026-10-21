@@ -2,24 +2,24 @@
 
 ## 0.9.2
 
-- Corregido un error que impedía volver a agregar NPC revividos a los contactos. Se registran nuevamente al interactuar con ellos usando un objeto social.
-- Corregidos los diálogos que hacían que los nietos llamaran «papá» o «mamá» al jugador.
-- Añadidos tratamientos para abuelos y bisabuelos, junto con tres variantes de mensajes espontáneos por etapa de vida para nietos y bisnietos.
-- Optimizados los retratos: se reutilizan las fotos guardadas y se eliminan las búsquedas continuas de contactos lejanos sin fotografía.
-- La lectura y el guardado de retratos se realizan en segundo plano. Las nuevas fotografías se guardan con una resolución máxima de 128 × 128 píxeles.
-- Limitados los reintentos de capturas fallidas. La opción de renovar el retrato permite volver a intentarlo.
-- Bloqueadas las interacciones desde interfaces abiertas con NPC que acaban de morir.
-- Actualizadas las traducciones en inglés, español de España, español de México y portugués de Brasil.
+- Fixed an issue that prevented revived NPCs from being added to contacts again. Interact with them while holding a social item to register them again.
+- Fixed dialogue that caused grandchildren to call the player "Dad" or "Mom".
+- Added appropriate forms of address for grandparents and great-grandparents, along with three spontaneous message variants per life stage for grandchildren and great-grandchildren.
+- Optimized portraits: saved photos are reused, and distant contacts without a photo are no longer searched for continuously.
+- Portrait loading and saving now run in the background. New photos are saved at a maximum resolution of 128 x 128 pixels.
+- Limited automatic retries after failed portrait captures. The retake option allows another attempt.
+- Blocked interactions through open interfaces with NPCs who have just died.
+- Updated translations in English, Spanish from Spain, Mexican Spanish, and Brazilian Portuguese.
 
 ## 0.9
 
-- Añadido el espejo mágico con su interfaz, objeto y receta.
-- Añadidos retratos persistentes de los contactos y una opción para renovarlos.
-- Añadidos mensajes espontáneos según la relación con el NPC, con ajustes para activarlos o desactivarlos.
-- Añadidas respuestas a mensajes y conversaciones con cierre, con contextos exclusivos del Nether y el End.
-- Añadidos sonidos de llegada para celular, carta y cristal y un sonido de envío.
-- Añadidas conversaciones por temas, insultos, disculpas y reconciliación con memoria de interacciones.
-- Mejoradas la bandeja de mensajes, las conversiones de interfaz y la distribución de textos.
-- Corregidas las claves de diálogo de Gustos, Planes y Recuerdos.
+- Added the magic mirror, including its interface, item, and crafting recipe.
+- Added persistent contact portraits and an option to retake them.
+- Added spontaneous messages based on the player's relationship with each NPC, with settings to enable or disable them.
+- Added message replies and conversations with a final NPC response, including exclusive Nether and End contexts.
+- Added incoming message sounds for the smartphone, letter, and crystal, plus an outgoing message sound.
+- Added topic-based conversations, insults, apologies, and reconciliation with memory of past interactions.
+- Improved the inbox, interface conversions, and text layout.
+- Fixed dialogue keys for Interests, Plans, and Memories.
 
-Este repositorio contiene exclusivamente el código fuente y los archivos de publicación de Forge 1.20.1.
+This repository contains only the source code and release files for Forge 1.20.1.
